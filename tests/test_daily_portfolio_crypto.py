@@ -131,3 +131,19 @@ def test_config_with_crypto_requires_cash_gross_cap(mixed_specs, tmp_path):
         dp.load_portfolio_config(p)
     p.write_text(p.read_text().replace("gross_cap: 1.5", "gross_cap: 1.0"))
     assert dp.load_portfolio_config(p).gross_cap == 1.0
+
+
+def test_engine_cash_only_buys_wait_for_cash():
+    # Sat decision moves the book from SPY to BTC; SPY cannot trade until Monday
+    idx = pd.date_range("2024-01-04", periods=6)  # Thu..Tue; SPY trades Thu, Fri, Mon, Tue
+    spy = pd.DataFrame({"open": 100.0, "high": 100.0, "low": 100.0, "close": 100.0, "volume": 1.0}, index=idx[[0, 1, 4, 5]])
+    btc = pd.DataFrame({"open": 50.0, "high": 50.0, "low": 50.0, "close": 50.0, "volume": 1.0}, index=idx)
+    from ictbot.research.base import ResearchData
+
+    data = ResearchData({"SPY": spy, "BTC/USD": btc}, {}, {})
+    w = pd.DataFrame({"SPY": [1.0, 1.0, 0.0, 0.0, 0.0, 0.0], "BTC/USD": [0.0, 0.0, 1.0, 1.0, 1.0, 1.0]}, index=idx)
+    free = run_weights(data, w, CostModel())
+    assert free.exposure.max() > 1.5  # without the rule: SPY 1.0 + BTC 1.0 on Sunday (borrowing for crypto)
+    res = run_weights(data, w, CostModel(), cash_only=("BTC/USD",))
+    assert res.exposure.max() <= 1.0 + 1e-12
+    assert res.exposure.iloc[-1] == pytest.approx(1.0)  # Monday: SPY sold, BTC bought with the freed cash

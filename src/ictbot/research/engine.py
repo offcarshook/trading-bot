@@ -32,7 +32,12 @@ def run_weights(
     *,
     band: float = 0.0,
     entry_kind: str = "open",
+    cash_only: tuple[str, ...] = (),
 ) -> StrategyResult:
+    """``cash_only`` symbols (Alpaca crypto) cannot be bought on margin: their
+    buys are cut to the cash left after every other target, as the live bot's
+    order sizing does (e.g. coins bought on a weekend while the stocks being sold
+    to fund them cannot trade until Monday)."""
     syms = [s for s in weights.columns if s in data.daily]
     if not syms:
         raise ValueError("weights reference no known symbols")
@@ -49,6 +54,7 @@ def run_weights(
     c_last = C.ffill().to_numpy(float)  # last known close per symbol: a missing bar must not erase the move across it
     n, k = o.shape
     cost_bps = np.array([costs.trade_cost_bps(s, entry_kind) for s in syms]) / 1e4
+    cash_mask = np.isin(syms, list(cash_only))
 
     ret = np.zeros(n)
     gross = np.zeros(n)
@@ -75,6 +81,15 @@ def run_weights(
             small = np.abs(delta) < band
             target = np.where(small, w_after_gap, target)
             delta = np.where(small, 0.0, delta)
+        if cash_mask.any():
+            buys = np.where(cash_mask & (delta > 0), delta, 0.0)
+            want = float(buys.sum())
+            if want > 0:
+                rest = target - buys
+                room = max(0.0, 1.0 - float(rest[rest > 0].sum()))
+                if room < want:
+                    target = rest + buys * (room / want)
+                    delta = target - w_after_gap
         traded = np.abs(delta)
         sold = np.where(delta < 0, -delta, 0.0)
         c_trade = float(np.dot(traded, cost_bps) + sold.sum() * costs.sec_fee_rate * costs.cost_multiplier)

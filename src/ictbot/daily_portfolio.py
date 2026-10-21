@@ -405,9 +405,11 @@ def simulate_portfolio(data: ResearchData, cfg: PortfolioConfig, costs: CostMode
     from .research.strategies.common import cap_to_margin
 
     total = cap_to_margin(total)
+    coins: tuple[str, ...] = ()
     if data.crypto:  # one container so stocks and coins share the cash
         data = ResearchData({**data.daily, **data.crypto}, data.intraday, dict(data.meta, view="mixed"))
-    return run_weights(data, total, costs, band=cfg.rebalance_band)
+        coins = tuple(c for c in total.columns if is_crypto_symbol(c))
+    return run_weights(data, total, costs, band=cfg.rebalance_band, cash_only=coins)
 
 
 def _write(out_dir: Path, today: dt.date, report: dict) -> None:

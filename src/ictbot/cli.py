@@ -292,14 +292,23 @@ def cmd_research(args: argparse.Namespace) -> int:
         from .research import validation as V
         from .research.metrics import summarize
 
+        import pandas as pd
+
+        from .daily_portfolio import is_crypto_symbol, required_symbols
+
         data = _research_data(args, cfg)
-        out = {}
+        out, rets = {}, {}
         for path in [x for x in args.portfolio_configs.split(",") if x]:
             pcfg = load_portfolio_config(path)
             res = simulate_portfolio(data, pcfg)
             sp = V.Splits.default(data.dates().max().date())
             r = res.returns
-            out[path] = {"profile": pcfg.profile,
+            # selection window S (research/DEPLOY_RULE.md): 2021 .. end of validation, from the first BTC/ETH bar if later
+            coins = [data.crypto[s].index.min() for s in ("BTC/USD", "ETH/USD") if s in data.crypto and len(data.crypto[s])]
+            s_start = max([pd.Timestamp("2021-01-01")] + coins).date()
+            rets[path] = r
+            out[path] = {"profile": pcfg.profile, "has_crypto": any(is_crypto_symbol(s) for s in required_symbols(pcfg)),
+                         "selection_window_S": summarize(V.cut(r, s_start, sp.validation[1]), res.exposure, res.turnover),
                          "walkforward_window_2019_2023": summarize(V.cut(r, dt.date(2019, 1, 1), sp.validation[1]), res.exposure, res.turnover),
                          "train": summarize(V.cut(r, *sp.train)), "validation": summarize(V.cut(r, *sp.validation)),
                          "test_2024_plus": summarize(V.cut(r, *sp.test), res.exposure, res.turnover),
@@ -307,6 +316,7 @@ def cmd_research(args: argparse.Namespace) -> int:
         d = out_root / "portfolio_sim"
         d.mkdir(parents=True, exist_ok=True)
         (d / "results.json").write_text(json.dumps(out, indent=1, default=str))
+        pd.DataFrame(rets).to_csv(d / "daily_returns.csv.gz")
         print(json.dumps({k: {kk: {m: v.get(m) for m in ("monthly_geo_mean", "cagr", "max_drawdown", "worst_month", "sharpe")}
                               for kk, v in d2.items() if isinstance(v, dict)} for k, d2 in out.items()}, indent=1, default=str))
         return 0
