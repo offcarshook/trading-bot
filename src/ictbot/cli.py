@@ -244,6 +244,49 @@ def cmd_test_order(args: argparse.Namespace) -> int:
     return 0
 
 
+def _research_data(args: argparse.Namespace, cfg: BotConfig):
+    from .research.data import AlpacaHistory, load_research_data, synthetic_data
+    from .research.universe import ALL_DAILY, INTRADAY
+
+    intraday = [] if args.no_intraday else list(INTRADAY)
+    if args.synthetic:
+        return synthetic_data(ALL_DAILY, start=args.start, end="2026-09-30", seed=7, intraday_symbols=tuple(intraday) if not args.no_intraday else ())
+    from .execution import AlpacaBroker
+    from .safety import load_paper_credentials
+
+    creds = load_paper_credentials()
+    broker = AlpacaBroker(creds.key_id, creds.secret_key)
+    start = dt.date.fromisoformat(args.start)
+    end = dt.date.fromisoformat(args.end) if args.end else now_ny().date() - dt.timedelta(days=1)
+    sessions = [x for x in broker.sessions(start, end) if x.day <= end]
+    hist = AlpacaHistory(creds.key_id, creds.secret_key, cache_dir=args.cache_dir, feed="sip")
+    return load_research_data(hist, sessions, ALL_DAILY, intraday, start, end)
+
+
+def cmd_research(args: argparse.Namespace) -> int:
+    """Research harness. PAPER research only: reads historical data, never trades."""
+    from .research import report as R
+    from .research import runner
+
+    cfg = _cfg(args)
+    out_root = Path(args.out)
+    if args.action == "explore":
+        data = _research_data(args, cfg)
+        only = [x for x in args.only.split(",") if x] if args.only else None
+        runner.run_explore(data, out_root / "explore", only=only, run_null=not args.no_null)
+        path = R.write_explore_report(out_root / "explore")
+        print(f"explore report: {path}")
+        return 0
+    if args.action == "test":
+        if not args.reason:
+            raise ValueError("research test requires --reason (every look at the test period is logged)")
+        data = _research_data(args, cfg)
+        res = runner.run_test(data, Path(args.frozen), out_root, args.reason)
+        print(f"test access #{res['access_number']} written under {out_root / 'test'}")
+        return 0
+    raise ValueError(f"unknown research action {args.action}")
+
+
 def cmd_reset_killswitch(args: argparse.Namespace) -> int:
     path = Path(args.config)
     today = now_ny().date().isoformat()
@@ -280,6 +323,18 @@ def build_parser() -> argparse.ArgumentParser:
     b.add_argument("--start")
     b.add_argument("--end")
     sub.add_parser("reset-killswitch")
+    rs = sub.add_parser("research", help="research harness (historical data only, never trades)")
+    rs.add_argument("action", choices=["explore", "test"])
+    rs.add_argument("--synthetic", action="store_true", help="offline smoke run on synthetic data (no conclusions!)")
+    rs.add_argument("--only", default="", help="comma-separated strategy names")
+    rs.add_argument("--no-null", action="store_true", help="skip the (slow) position-shift null test")
+    rs.add_argument("--no-intraday", action="store_true")
+    rs.add_argument("--start", default="2016-01-01")
+    rs.add_argument("--end", default="")
+    rs.add_argument("--out", default="research_results")
+    rs.add_argument("--cache-dir", default="data_cache/research")
+    rs.add_argument("--frozen", default="research/frozen.json")
+    rs.add_argument("--reason", default="")
     t = sub.add_parser("test-order", help="place + cancel one far-from-market 1-share paper bracket")
     t.add_argument("--symbol", default="SPY")
     t.add_argument("--below-pct", type=float, default=10.0)
@@ -290,7 +345,7 @@ def build_parser() -> argparse.ArgumentParser:
     return p
 
 
-COMMANDS = {"check": cmd_check, "run": cmd_run, "flatten": cmd_flatten, "report": cmd_report, "backtest": cmd_backtest, "reset-killswitch": cmd_reset_killswitch, "test-order": cmd_test_order}
+COMMANDS = {"check": cmd_check, "run": cmd_run, "flatten": cmd_flatten, "report": cmd_report, "backtest": cmd_backtest, "reset-killswitch": cmd_reset_killswitch, "test-order": cmd_test_order, "research": cmd_research}
 
 
 def _gh_annotation(title: str, message: str) -> None:
