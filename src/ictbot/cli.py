@@ -246,12 +246,13 @@ def cmd_test_order(args: argparse.Namespace) -> int:
 
 
 def _research_data(args: argparse.Namespace, cfg: BotConfig):
-    from .research.data import AlpacaHistory, load_research_data, synthetic_data
-    from .research.universe import ALL_DAILY, INTRADAY
+    from .research.data import AlpacaCryptoHistory, AlpacaHistory, load_research_data, synthetic_data
+    from .research.universe import ALL_DAILY, CRYPTO, INTRADAY
 
     intraday = [] if args.no_intraday else list(INTRADAY)
     if args.synthetic:
-        return synthetic_data(ALL_DAILY, start=args.start, end="2026-09-30", seed=7, intraday_symbols=tuple(intraday) if not args.no_intraday else ())
+        return synthetic_data(ALL_DAILY, start=args.start, end="2026-09-30", seed=7, intraday_symbols=tuple(intraday) if not args.no_intraday else (),
+                              crypto_symbols=tuple(CRYPTO))
     from .execution import AlpacaBroker
     from .safety import load_paper_credentials
 
@@ -261,7 +262,8 @@ def _research_data(args: argparse.Namespace, cfg: BotConfig):
     end = dt.date.fromisoformat(args.end) if args.end else now_ny().date() - dt.timedelta(days=1)
     sessions = [x for x in broker.sessions(start, end) if x.day <= end]
     hist = AlpacaHistory(creds.key_id, creds.secret_key, cache_dir=args.cache_dir, feed="sip")
-    return load_research_data(hist, sessions, ALL_DAILY, intraday, start, end)
+    crypto = AlpacaCryptoHistory(creds.key_id, creds.secret_key, cache_dir=args.cache_dir)
+    return load_research_data(hist, sessions, ALL_DAILY, intraday, start, end, crypto_history=crypto, crypto_symbols=list(CRYPTO))
 
 
 def cmd_research(args: argparse.Namespace) -> int:
@@ -284,6 +286,29 @@ def cmd_research(args: argparse.Namespace) -> int:
         data = _research_data(args, cfg)
         res = runner.run_test(data, Path(args.frozen), out_root, args.reason)
         print(f"test access #{res['access_number']} written under {out_root / 'test'}")
+        return 0
+    if args.action == "portfolio-sim":
+        from .daily_portfolio import load_portfolio_config, simulate_portfolio
+        from .research import validation as V
+        from .research.metrics import summarize
+
+        data = _research_data(args, cfg)
+        out = {}
+        for path in [x for x in args.portfolio_configs.split(",") if x]:
+            pcfg = load_portfolio_config(path)
+            res = simulate_portfolio(data, pcfg)
+            sp = V.Splits.default(data.dates().max().date())
+            r = res.returns
+            out[path] = {"profile": pcfg.profile,
+                         "walkforward_window_2019_2023": summarize(V.cut(r, dt.date(2019, 1, 1), sp.validation[1]), res.exposure, res.turnover),
+                         "train": summarize(V.cut(r, *sp.train)), "validation": summarize(V.cut(r, *sp.validation)),
+                         "test_2024_plus": summarize(V.cut(r, *sp.test), res.exposure, res.turnover),
+                         "full": summarize(r, res.exposure, res.turnover), "max_gross": float(res.exposure.max())}
+        d = out_root / "portfolio_sim"
+        d.mkdir(parents=True, exist_ok=True)
+        (d / "results.json").write_text(json.dumps(out, indent=1, default=str))
+        print(json.dumps({k: {kk: {m: v.get(m) for m in ("monthly_geo_mean", "cagr", "max_drawdown", "worst_month", "sharpe")}
+                              for kk, v in d2.items() if isinstance(v, dict)} for k, d2 in out.items()}, indent=1, default=str))
         return 0
     if args.action == "ict-baseline":
         from .data import AlpacaMarketData
@@ -392,7 +417,8 @@ def build_parser() -> argparse.ArgumentParser:
     rb.add_argument("--force", action="store_true", help="rebalance even if already done today")
     rb.add_argument("--ignore-window", action="store_true", help="skip the market-open / time-window gate")
     rs = sub.add_parser("research", help="research harness (historical data only, never trades)")
-    rs.add_argument("action", choices=["explore", "test", "ict-baseline"])
+    rs.add_argument("action", choices=["explore", "test", "ict-baseline", "portfolio-sim"])
+    rs.add_argument("--portfolio-configs", default="config/daily_portfolio.yaml")
     rs.add_argument("--synthetic", action="store_true", help="offline smoke run on synthetic data (no conclusions!)")
     rs.add_argument("--only", default="", help="comma-separated strategy names")
     rs.add_argument("--no-null", action="store_true", help="skip the (slow) position-shift null test")

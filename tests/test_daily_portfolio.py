@@ -70,21 +70,39 @@ def test_plan_orders_band_exits_and_sell_first():
     assert [(o.symbol, o.side, o.qty) for o in orders] == [("SPY", "sell", 10), ("XLF", "buy", 600)]
 
 
+def _broker_with_marks(data, **kw):
+    b = FakeBroker(**kw)
+    b.marks = {s: float(df["close"].iloc[-1]) for s, df in data.daily.items()}
+    b.acct.buying_power = str(float(b.acct.equity) * 2)
+    return b
+
+
 def test_rebalance_places_orders_then_is_idempotent(data, tmp_path):
-    broker = FakeBroker()
-    prices = {s: float(df["close"].iloc[-1]) for s, df in data.daily.items()}
+    broker = _broker_with_marks(data)
+    prices = dict(broker.marks)
     now = ny_dt(dt.date(2025, 10, 1), dt.time(9, 40))
-    r1 = run_rebalance(CFG, broker, data, prices, now, dry_run=False, force=False, out_dir=tmp_path)
+    r1 = run_rebalance(CFG, broker, data, prices, now, dry_run=False, force=False, out_dir=tmp_path, sleep=lambda s: None)
     assert r1["sent"] and all(o["side"] == "buy" for o in r1["sent"])
-    r2 = run_rebalance(CFG, broker, data, prices, now, dry_run=False, force=False, out_dir=tmp_path)
-    assert r2.get("skipped") == "already rebalanced today"
+    r2 = run_rebalance(CFG, broker, data, prices, now, dry_run=False, force=False, out_dir=tmp_path, sleep=lambda s: None)
+    assert r2["sent"] == []  # plan = targets - current positions -> nothing left to do
+    assert (tmp_path / "2025-10-01" / "daily_portfolio.json").exists()
+
+
+def test_rejected_buy_does_not_abort_and_report_is_written(data, tmp_path):
+    broker = _broker_with_marks(data)
+    broker.pos["ZZZ"] = BrokerPosition("ZZZ", 10, 50.0, 50.0)  # leftover from an old config
+    broker.reject_buys = True
+    rep = run_rebalance(CFG, broker, data, dict(broker.marks), ny_dt(dt.date(2025, 10, 1), dt.time(9, 40)), dry_run=False,
+                        force=False, out_dir=tmp_path, sleep=lambda s: None)
+    assert ("ZZZ", "sell") in [(o["symbol"], o["side"]) for o in rep["sent"]]  # orphan exited (priced from the position)
+    assert rep["errors"] and all(e["side"] == "buy" for e in rep["errors"])
     assert (tmp_path / "2025-10-01" / "daily_portfolio.json").exists()
 
 
 def test_dry_run_sends_nothing(data, tmp_path):
-    broker = FakeBroker()
-    prices = {s: float(df["close"].iloc[-1]) for s, df in data.daily.items()}
-    rep = run_rebalance(CFG, broker, data, prices, ny_dt(dt.date(2025, 10, 1), dt.time(9, 40)), dry_run=True, force=False, out_dir=tmp_path)
+    broker = _broker_with_marks(data)
+    rep = run_rebalance(CFG, broker, data, dict(broker.marks), ny_dt(dt.date(2025, 10, 1), dt.time(9, 40)), dry_run=True, force=False,
+                        out_dir=tmp_path, sleep=lambda s: None)
     assert rep["sent"] and all(o.get("dry_run") for o in rep["sent"])
     assert broker.orders("all") == []
 
@@ -94,7 +112,8 @@ def test_kill_switch_liquidates(data, tmp_path):
     broker.equity_history = lambda: [(dt.date(2025, 9, 1), 100_000.0)]
     broker.pos["XLK"] = BrokerPosition("XLK", 50, 200.0, 200.0)
     prices = {s: float(df["close"].iloc[-1]) for s, df in data.daily.items()} | {"XLK": 200.0}
-    rep = run_rebalance(CFG, broker, data, prices, ny_dt(dt.date(2025, 10, 1), dt.time(9, 40)), dry_run=False, force=False, out_dir=tmp_path)
+    rep = run_rebalance(CFG, broker, data, prices, ny_dt(dt.date(2025, 10, 1), dt.time(9, 40)), dry_run=False, force=False,
+                        out_dir=tmp_path, sleep=lambda s: None)
     assert rep["kill_switch"] and rep["targets"] == {}
     assert [(o["symbol"], o["side"]) for o in rep["sent"]] == [("XLK", "sell")]
 
@@ -106,3 +125,18 @@ def test_config_rejects_unsafe_values(tmp_path):
     with pytest.raises(ValueError, match="gross_cap"):
         load_portfolio_config(p)
     assert isinstance(CFG, PortfolioConfig) and isinstance(CFG.sleeves[0], Sleeve)
+
+
+def test_simulator_runs_exact_combined_portfolio(data):
+    from ictbot.daily_portfolio import simulate_portfolio
+
+    res = simulate_portfolio(data, CFG)
+    assert len(res.returns) > 100
+    assert res.exposure.max() <= CFG.gross_cap + 0.1
+
+
+def test_unquoted_reset_date_is_accepted(tmp_path):
+    txt = (ROOT / "config" / "daily_portfolio.yaml").read_text().replace("drawdown_reset_date: null", "drawdown_reset_date: 2026-10-21")
+    p = tmp_path / "c.yaml"
+    p.write_text(txt)
+    assert load_portfolio_config(p).drawdown_reset_date == "2026-10-21"

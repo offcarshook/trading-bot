@@ -90,6 +90,42 @@ class AlpacaHistory:
         return df, manifest
 
 
+class AlpacaCryptoHistory:
+    """Daily crypto bars (Alpaca US crypto feed; 24/7 market; no adjustment needed)."""
+
+    def __init__(self, key_id: str | None = None, secret_key: str | None = None, cache_dir: str | Path = "data_cache/research") -> None:
+        from alpaca.data.historical import CryptoHistoricalDataClient
+
+        self._client = CryptoHistoricalDataClient(key_id, secret_key)
+        self.cache = Path(cache_dir)
+        self.cache.mkdir(parents=True, exist_ok=True)
+
+    def daily(self, symbol: str, start: dt.date, end: dt.date) -> tuple[pd.DataFrame, dict]:
+        from alpaca.data.requests import CryptoBarsRequest
+        from alpaca.data.timeframe import TimeFrame
+
+        tag = f"{symbol.replace('/', '-')}_1d_crypto_{start}_{end}"
+        path, man_path = self.cache / f"{tag}.csv.gz", self.cache / f"{tag}.json"
+        if path.exists() and man_path.exists():
+            df = pd.read_csv(path, index_col=0, parse_dates=True)
+            return df, json.loads(man_path.read_text())
+        req = CryptoBarsRequest(symbol_or_symbols=symbol, timeframe=TimeFrame.Day,
+                                start=dt.datetime.combine(start, dt.time(0)), end=dt.datetime.combine(end, dt.time(23, 59)))
+        barset = call_with_retry(lambda: self._client.get_crypto_bars(req), what=f"crypto bars {symbol}", attempts=6)
+        rows = barset.data.get(symbol, []) if hasattr(barset, "data") else []
+        idx = pd.DatetimeIndex([pd.Timestamp(b.timestamp).tz_convert("UTC").tz_localize(None).normalize() for b in rows])
+        df = pd.DataFrame({"open": [b.open for b in rows], "high": [b.high for b in rows], "low": [b.low for b in rows],
+                           "close": [b.close for b in rows], "volume": [b.volume for b in rows]}, index=idx)
+        df = df[~df.index.duplicated(keep="last")].sort_index()
+        df.index.name = "date"
+        df.to_csv(path)
+        manifest = {"symbol": symbol, "timeframe": "1Day", "feed": "crypto_us", "start": str(start), "end": str(end), "rows": int(len(df)),
+                    "sha256": _sha256(path), "first": str(df.index[0].date()) if len(df) else None, "last": str(df.index[-1].date()) if len(df) else None}
+        man_path.write_text(json.dumps(manifest, indent=1))
+        log.info("downloaded crypto", extra=manifest)
+        return df, manifest
+
+
 def rth_filter(bars: pd.DataFrame, sessions: list[TradingSession]) -> pd.DataFrame:
     """Keep bars whose START is inside [session.open, session.close)."""
     if bars.empty:
@@ -124,8 +160,10 @@ def load_research_data(
     end: dt.date,
     daily_build_minutes: int = 30,
     intraday_minutes: int = 5,
+    crypto_history: "AlpacaCryptoHistory | None" = None,
+    crypto_symbols: list[str] | None = None,
 ) -> ResearchData:
-    daily, intraday, manifests = {}, {}, []
+    daily, intraday, manifests, crypto = {}, {}, [], {}
     for sym in daily_symbols:
         raw, man = history.bars(sym, daily_build_minutes, start, end)
         manifests.append(man)
@@ -138,9 +176,19 @@ def load_research_data(
         raw, man = history.bars(sym, intraday_minutes, start, end)
         manifests.append(man)
         intraday[sym] = rth_filter(raw, sessions)
+    if crypto_history is not None:
+        for sym in crypto_symbols or []:
+            try:
+                df, man = crypto_history.daily(sym, start, end)
+            except Exception as exc:  # noqa: BLE001 - an unsupported pair must not kill the run
+                log.warning("crypto download failed", extra={"symbol": sym, "error": str(exc)[:200]})
+                continue
+            manifests.append(man)
+            if len(df):
+                crypto[sym] = df
     early = sorted(str(s.day) for s in sessions if s.close.time() < dt.time(16, 0))
     return ResearchData(daily, intraday, {"manifests": manifests, "start": str(start), "end": str(end), "early_closes": early,
-                                          "feed": history._feed_name})
+                                          "feed": history._feed_name}, crypto)
 
 
 # --------------------------------------------------------------------------- #
@@ -149,7 +197,8 @@ def load_research_data(
 
 
 def synthetic_data(symbols: list[str], start: str = "2016-01-04", end: str = "2026-09-30", seed: int = 7,
-                   intraday_symbols: tuple[str, ...] = (), drift: float = 0.0003, vol: float = 0.011) -> ResearchData:
+                   intraday_symbols: tuple[str, ...] = (), drift: float = 0.0003, vol: float = 0.011,
+                   crypto_symbols: tuple[str, ...] = (), crypto_start: str = "2020-01-01") -> ResearchData:
     rng = np.random.default_rng(seed)
     dates = pd.bdate_range(start, end)
     common = rng.normal(0, vol * 0.8, len(dates))
@@ -180,4 +229,14 @@ def synthetic_data(symbols: list[str], start: str = "2016-01-04", end: str = "20
             frames.append(pd.DataFrame({"open": op, "high": np.maximum(op, px) + wig, "low": np.minimum(op, px) - wig,
                                         "close": px, "volume": 1e4}, index=idx))
         intraday[s] = pd.concat(frames) if frames else pd.DataFrame()
-    return ResearchData(daily, intraday, {"synthetic": True, "seed": seed})
+    crypto = {}
+    cdates = pd.date_range(crypto_start, end, freq="D")
+    common_c = rng.normal(0, 0.03, len(cdates))
+    for j, s in enumerate(crypto_symbols):
+        r = 0.0008 + common_c * (0.8 + 0.1 * j) + rng.normal(0, 0.02, len(cdates))
+        close = 1000 * np.exp(np.cumsum(r))
+        open_ = np.concatenate(([1000.0], close[:-1]))
+        hi = np.maximum(open_, close) * (1 + np.abs(rng.normal(0, 0.01, len(cdates))))
+        lo = np.minimum(open_, close) * (1 - np.abs(rng.normal(0, 0.01, len(cdates))))
+        crypto[s] = pd.DataFrame({"open": open_, "high": hi, "low": lo, "close": close, "volume": 1e3}, index=cdates)
+    return ResearchData(daily, intraday, {"synthetic": True, "seed": seed}, crypto)

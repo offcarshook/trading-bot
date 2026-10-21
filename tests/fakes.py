@@ -58,10 +58,22 @@ class FakeBroker:
             raise TimeoutError("network timeout after the order landed")
         return o
 
+    marks: dict = {}
+    reject_buys = False
+
     def submit_market(self, *, symbol, side, qty, client_order_id):
+        """Fills immediately at the position's mark (or self.marks); applies side and qty."""
+        if self.reject_buys and side == "buy":
+            raise DuplicateClientOrderId("403 insufficient buying power")
         now = dt.datetime.now(tz=NY)
-        p = self.pos.pop(symbol, None)
-        px = p.current_price if p else 0.0
+        p = self.pos.get(symbol)
+        px = (p.current_price if p else None) or self.marks.get(symbol, 100.0)
+        signed = qty if side == "buy" else -qty
+        new_qty = (p.qty if p else 0.0) + signed
+        if abs(new_qty) < 1e-9:
+            self.pos.pop(symbol, None)
+        else:
+            self.pos[symbol] = BrokerPosition(symbol, new_qty, p.avg_entry_price if p else px, px)
         o = BrokerOrder(str(next(self._ids)), client_order_id, symbol, side, "market", "filled", qty, qty, px, None, None, "simple", now, now)
         self.orders_by_id[o.id] = o
         return o

@@ -112,3 +112,24 @@ def test_all_nan_rows_hold_without_trading(monkeypatch):
     res = run_weights(d, w, ZERO)
     assert res.turnover.iloc[1] == pytest.approx(0.5)  # one entry trade...
     assert res.turnover.iloc[2:].sum() == pytest.approx(0.0)  # ...then pure drift, no re-trading to 0.5
+
+
+def test_missing_bar_move_is_booked_when_trading_resumes(monkeypatch):
+    _zero_spread(monkeypatch)
+    idx = pd.bdate_range("2020-01-01", periods=4)
+    a = pd.DataFrame({"open": [100, 100, np.nan, 50], "high": 100, "low": 50, "close": [100, 100, np.nan, 50], "volume": 1.0}, index=idx)
+    b = pd.DataFrame({"open": 10.0, "high": 10.0, "low": 10.0, "close": 10.0, "volume": 1.0}, index=idx)
+    d = ResearchData({"A": a, "B": b})
+    w = pd.DataFrame({"A": [1.0] * 4, "B": [0.0] * 4}, index=idx)
+    eq = (1 + run_weights(d, w, ZERO).returns).prod()
+    assert eq == pytest.approx(0.5)  # the -50% across the missing day is not erased
+
+
+def test_cap_to_margin_respects_letf_maintenance():
+    from ictbot.research.strategies.common import cap_to_margin
+
+    w = pd.DataFrame({"TQQQ": [1.95], "SPY": [0.0]}, index=pd.bdate_range("2020-01-01", periods=1))
+    capped = cap_to_margin(w)
+    assert capped["TQQQ"].iloc[0] == pytest.approx(0.97 / 0.75)
+    w2 = pd.DataFrame({"SPY": [1.95]}, index=w.index)
+    assert cap_to_margin(w2)["SPY"].iloc[0] == pytest.approx(1.94)

@@ -125,13 +125,35 @@ def data_quality(data: ResearchData) -> dict:
     return out
 
 
+def splits_for(spec: StrategySpec, data: ResearchData) -> V.Splits:
+    data_end = data.dates().max().date()
+    if spec.split_mode != "adaptive":
+        return V.Splits.default(data_end)
+    frames = [data.crypto.get(s) if s in data.crypto else data.daily.get(s) for s in spec.symbols]
+    frames = [f for f in frames if f is not None and len(f)]
+    if not frames:
+        return V.Splits.default(data_end)
+    first = max(f.index.min() for f in frames).date()  # all symbols available (conservative)
+    last = min(f.index.max() for f in frames).date()
+    return V.Splits.adaptive(first, last)
+
+
+def crypto_benchmark(data: ResearchData, splits: V.Splits, costs: CostModel) -> dict:
+    if "BTC/USD" not in data.crypto:
+        return {}
+    cv = data.crypto_view()
+    res = run_weights(cv, pd.DataFrame({"BTC/USD": 1.0}, index=cv.dates()), costs)
+    return {"buy_hold_BTC": {"validation": summarize(res.slice(*splits.validation).returns),
+                             "walkforward_window": summarize(V.cut(res.returns, splits.train[0] + dt.timedelta(days=730), splits.validation[1]))}}
+
+
 # --------------------------------------------------------------------------- #
 # Explore one strategy
 # --------------------------------------------------------------------------- #
 
 
 def explore_strategy(spec: StrategySpec, data: ResearchData, splits: V.Splits, costs: CostModel, labels: pd.Series,
-                     run_null: bool = True) -> dict:
+                     run_null: bool = True, wf_train_years: int = 3) -> dict:
     t0 = time.time()
     trials = spec.trials()
     tr_s, tr_e = splits.train
@@ -165,7 +187,7 @@ def explore_strategy(spec: StrategySpec, data: ResearchData, splits: V.Splits, c
     dsr = V.deflated_sharpe(V.cut(best.returns, tr_s, tr_e), [sharpe(train_matrix[c]) / math.sqrt(252) for c in train_matrix], len(train_matrix.columns))
     pbo = V.pbo_cscv(train_matrix) if train_matrix.shape[1] > 1 else {"pbo": None, "reason": "single trial"}
     sens = V.sensitivity([r["params"] for r in ok], scores, spec.param_grid)
-    wf = V.walk_forward({k: V.cut(s, tr_s, va_e) for k, s in full_returns.items()}, tr_s, va_e, train_years=3, step_months=6)
+    wf = V.walk_forward({k: V.cut(s, tr_s, va_e) for k, s in full_returns.items()}, tr_s, va_e, train_years=wf_train_years, step_months=6)
     wf_m = summarize(wf["oos_returns"])
 
     stressed = spec.run(data, best_row["params"], costs.stressed(2.0))
@@ -209,6 +231,7 @@ def explore_strategy(spec: StrategySpec, data: ResearchData, splits: V.Splits, c
     }
     return {
         "strategy": spec.name, "family": spec.family, "hypothesis": spec.hypothesis, "n_trials": len(trials),
+        "splits": splits.as_dict(), "split_mode": spec.split_mode,
         "n_failed_trials": len(trial_rows) - len(ok), "selected_params": best_row["params"],
         "train": train_m, "validation": val_m, "walkforward_oos": wf_m, "walkforward_choices": wf["choices"],
         "walkforward_choice_stability": wf["most_common_choice_share"], "dsr_train": dsr, "pbo_train": pbo,
@@ -260,8 +283,12 @@ def run_explore(data_full: ResearchData, out_dir: Path, only: list[str] | None =
         if spec.uses_intraday and not any(len(v) for v in data.intraday.values()):
             reports.append({"strategy": name, "skipped": "no intraday data loaded"})
             continue
-        log.info("exploring", extra={"strategy": name, "trials": len(spec.trials())})
-        rep = explore_strategy(spec, data, splits, costs, labels, run_null=run_null)
+        sp = splits_for(spec, data_full)
+        data_s = data if spec.split_mode != "adaptive" else data_full.truncate(sp.validation[1])  # <-- its test period locked out
+        log.info("exploring", extra={"strategy": name, "trials": len(spec.trials()), "splits": sp.as_dict()})
+        rep = explore_strategy(spec, data_s, sp, costs, labels, run_null=run_null, wf_train_years=3 if spec.split_mode != "adaptive" else 2)
+        if spec.split_mode == "adaptive":
+            rep["benchmarks_own_splits"] = crypto_benchmark(data_s, sp, costs)
         series[name] = rep.pop("_series", {})
         reports.append(rep)
         log.info("explored", extra={"strategy": name, "survives": rep.get("survives"), "val_sharpe": rep.get("validation", {}).get("sharpe"),
@@ -326,12 +353,19 @@ def run_test(data_full: ResearchData, frozen_path: Path, results_root: Path, rea
     series = {}
     for cand in frozen["candidates"]:
         spec = specs[cand["strategy"]]
+        sp = splits_for(spec, data_full)
         res = spec.run(data_full, cand["params"], costs)
-        te = res.slice(*splits.test)
+        te = res.slice(*sp.test)
         m = summarize(te.returns, te.exposure, te.turnover, te.n_trades, te.costs)
-        stressed = summarize(spec.run(data_full, cand["params"], costs.stressed(2.0)).slice(*splits.test).returns)
+        stressed = summarize(spec.run(data_full, cand["params"], costs.stressed(2.0)).slice(*sp.test).returns)
         lev = V.leverage_analysis(te.returns, MONTHLY_TARGETS, costs.margin_rate, exposure=te.exposure)
-        out["candidates"].append({"strategy": cand["strategy"], "params": cand["params"], "test": m, "test_cost_stress_2x": stressed,
+        bench = crypto_benchmark(data_full, V.Splits(sp.train, sp.validation, sp.test), costs) if spec.split_mode == "adaptive" else {}
+        if bench:
+            cv = data_full.crypto_view()
+            bh = run_weights(cv, pd.DataFrame({"BTC/USD": 1.0}, index=cv.dates()), costs)
+            bench = {"buy_hold_BTC_test": summarize(bh.slice(*sp.test).returns)}
+        out["candidates"].append({"strategy": cand["strategy"], "params": cand["params"], "test_period": [str(sp.test[0]), str(sp.test[1])],
+                                  "benchmark_own_test": bench, "test": m, "test_cost_stress_2x": stressed,
                                   "leverage_on_test": lev, "bootstrap_1y": V.bootstrap_summary(te.returns, n_sims=1000)})
         series[cand["strategy"]] = {"test": te.returns}
     out_dir = results_root / "test"

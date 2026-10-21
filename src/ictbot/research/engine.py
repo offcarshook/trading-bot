@@ -46,6 +46,7 @@ def run_weights(
     hold_row = W_raw.isna().all(axis=1).to_numpy()
     W = W_raw.ffill().fillna(0.0)  # for reporting / null tests
     o, c, w_target_by_decision = O.to_numpy(float), C.to_numpy(float), W_raw.fillna(0.0).to_numpy(float)
+    c_last = C.ffill().to_numpy(float)  # last known close per symbol: a missing bar must not erase the move across it
     n, k = o.shape
     cost_bps = np.array([costs.trade_cost_bps(s, entry_kind) for s in syms]) / 1e4
 
@@ -57,9 +58,10 @@ def run_weights(
     trades = 0
     w_hold = np.zeros(k)
     for i in range(1, n):
-        prev_c = c[i - 1]
+        prev_c = c_last[i - 1]
         tradable = np.isfinite(o[i]) & np.isfinite(c[i]) & np.isfinite(prev_c)
-        # overnight leg with held weights (missing prices -> no move, cannot trade)
+        # overnight leg with held weights; after a missing bar the gap is measured
+        # from the LAST KNOWN close, so the move is booked when trading resumes
         r_on = np.where(tradable, o[i] / np.where(tradable, prev_c, 1.0) - 1.0, 0.0)
         port_on = float(np.dot(w_hold, r_on))
         denom = 1.0 + port_on

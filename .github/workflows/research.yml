@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
     inputs:
       action:
-        description: "explore | ict-baseline | test (test needs research/frozen.json + reason)"
+        description: "explore | ict-baseline | test | portfolio-sim"
         default: "explore"
       only:
         description: "Comma-separated strategy names (blank = all)"
@@ -18,6 +18,9 @@ on:
       frozen:
         description: "Frozen candidates file for action=test"
         default: "research/frozen.json"
+      portfolio_configs:
+        description: "portfolio-sim: comma-separated config files"
+        default: "config/daily_portfolio.yaml"
       no_null:
         description: "Skip the slow position-shift null test"
         type: boolean
@@ -56,11 +59,16 @@ jobs:
           restore-keys: |
             research-data-${{ inputs.action }}-
             research-data-
+      - name: Restore test-access log from the results branch
+        run: |
+          mkdir -p research_results
+          git fetch origin research-results 2>/dev/null && git show origin/research-results:research_results/test_access_log.json > research_results/test_access_log.json 2>/dev/null || rm -f research_results/test_access_log.json
       - name: Run research
         run: |
           ARGS="${{ inputs.action }}"
           [ -n "${{ inputs.only }}" ] && ARGS="$ARGS --only ${{ inputs.only }}"
           [ "${{ inputs.no_null }}" = "true" ] && ARGS="$ARGS --no-null"
+          [ "${{ inputs.action }}" = "portfolio-sim" ] && ARGS="$ARGS --portfolio-configs ${{ inputs.portfolio_configs }}"
           if [ "${{ inputs.action }}" = "test" ]; then ARGS="$ARGS --frozen ${{ inputs.frozen }} --reason \"${{ inputs.reason }}\""; fi
           eval python -m ictbot research $ARGS 2>&1 | tee research_console.log
           exit ${PIPESTATUS[0]}

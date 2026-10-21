@@ -42,6 +42,15 @@ class Splits:
             test=(dt.date(2024, 1, 1), data_end),
         )
 
+    @classmethod
+    def adaptive(cls, first: dt.date, data_end: dt.date, train: float = 0.55, val: float = 0.20) -> "Splits":
+        """Pre-registered rule for instruments with short histories (crypto):
+        first 55% train, next 20% validation, last 25% test."""
+        span = (data_end - first).days
+        t_end = first + dt.timedelta(days=int(span * train))
+        v_end = first + dt.timedelta(days=int(span * (train + val)))
+        return cls(train=(first, t_end), validation=(t_end + dt.timedelta(days=1), v_end), test=(v_end + dt.timedelta(days=1), data_end))
+
     def as_dict(self) -> dict:
         return {k: [str(a), str(b)] for k, (a, b) in {"train": self.train, "validation": self.validation, "test": self.test}.items()}
 

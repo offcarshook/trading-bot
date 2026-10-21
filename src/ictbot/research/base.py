@@ -34,6 +34,13 @@ class ResearchData:
     daily: dict[str, pd.DataFrame]
     intraday: dict[str, pd.DataFrame] = field(default_factory=dict)
     meta: dict[str, Any] = field(default_factory=dict)
+    # Crypto trades 7 days a week. It is kept OUT of ``daily`` so weekend rows
+    # never leak into stock strategies' rolling windows; crypto strategies use
+    # ``crypto_view()`` which presents it as an ordinary daily container.
+    crypto: dict[str, pd.DataFrame] = field(default_factory=dict)
+
+    def crypto_view(self) -> "ResearchData":
+        return ResearchData(dict(self.crypto), {}, dict(self.meta, view="crypto"))
 
     @property
     def symbols(self) -> list[str]:
@@ -61,7 +68,8 @@ class ResearchData:
                 continue
             cutoff = pd.Timestamp(end_ts.date() + dt.timedelta(days=1), tz=df.index.tz)
             intraday[s] = df[df.index < cutoff]
-        return ResearchData(daily, intraday, dict(self.meta, truncated_at=str(end_ts.date())))
+        crypto = {s: df[df.index <= end_ts] for s, df in self.crypto.items()}
+        return ResearchData(daily, intraday, dict(self.meta, truncated_at=str(end_ts.date())), crypto)
 
 
 @dataclass
@@ -130,6 +138,7 @@ class StrategySpec:
     run_fn: Callable[[ResearchData, dict[str, Any], Any], StrategyResult]
     uses_intraday: bool = False
     symbols: tuple[str, ...] = ()
+    split_mode: str = "default"  # "default" = fixed 2016-2021/2022-2023/2024+; "adaptive" = 55/20/25% of the symbols' own history
 
     def run(self, data: ResearchData, params: dict[str, Any], costs) -> StrategyResult:
         merged = dict(self.default_params, **params)

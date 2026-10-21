@@ -66,6 +66,27 @@ INSTRUMENTS: dict[str, Instrument] = {
         Instrument("TQQQ", "leveraged", 1.5, 3.0),
         Instrument("TNA", "leveraged", 3.0, 3.0),
         Instrument("UDOW", "leveraged", 3.0, 3.0),
+        # extended leveraged ETF universe (all launched before 2016)
+        Instrument("SOXL", "leveraged", 3.0, 3.0), Instrument("TECL", "leveraged", 3.0, 3.0),
+        Instrument("FAS", "leveraged", 3.0, 3.0), Instrument("LABU", "leveraged", 5.0, 3.0),
+        Instrument("CURE", "leveraged", 5.0, 3.0), Instrument("DRN", "leveraged", 5.0, 3.0),
+        Instrument("ERX", "leveraged", 4.0, 2.0), Instrument("NUGT", "leveraged", 4.0, 2.0),
+        Instrument("TMF", "leveraged", 3.0, 3.0), Instrument("YINN", "leveraged", 5.0, 3.0),
+        Instrument("SPXL", "leveraged", 2.0, 3.0), Instrument("MIDU", "leveraged", 6.0, 3.0),
+        Instrument("RETL", "leveraged", 8.0, 3.0), Instrument("DPST", "leveraged", 6.0, 3.0),
+        # extended unlevered ETFs
+        Instrument("SMH", "us_sector", 1.5), Instrument("XBI", "us_sector", 2.0), Instrument("IBB", "us_sector", 2.0),
+        Instrument("GDX", "commodity", 2.0), Instrument("KWEB", "intl_equity", 3.0), Instrument("ARKK", "us_equity", 3.0),
+        Instrument("IGV", "us_sector", 2.5), Instrument("ITB", "us_sector", 2.5), Instrument("XME", "us_sector", 3.0),
+        Instrument("TAN", "us_sector", 4.0), Instrument("URA", "commodity", 4.0), Instrument("EWJ", "intl_equity", 2.0),
+        Instrument("EWZ", "intl_equity", 2.0), Instrument("INDA", "intl_equity", 2.5), Instrument("FXI", "intl_equity", 2.0),
+        # crypto (Alpaca spot, no margin, no shorting). half-spread here INCLUDES the
+        # 25 bp tier-1 taker fee per side (Alpaca crypto fee schedule, Oct 2026)
+        Instrument("BTC/USD", "crypto", 28.0), Instrument("ETH/USD", "crypto", 29.0),
+        Instrument("SOL/USD", "crypto", 32.0), Instrument("LTC/USD", "crypto", 33.0),
+        Instrument("BCH/USD", "crypto", 35.0), Instrument("LINK/USD", "crypto", 35.0),
+        Instrument("AVAX/USD", "crypto", 35.0), Instrument("DOGE/USD", "crypto", 33.0),
+        Instrument("UNI/USD", "crypto", 38.0), Instrument("AAVE/USD", "crypto", 40.0),
     ]
 }
 
@@ -73,7 +94,10 @@ CORE_DAILY = ["SPY", "QQQ", "IWM", "DIA", "EFA", "EEM", "TLT", "IEF", "SHY", "LQ
 SECTORS = ["XLK", "XLF", "XLE", "XLV", "XLY", "XLP", "XLI", "XLU", "XLB"]
 LEVERAGED = ["SSO", "QLD", "UPRO", "TQQQ", "TNA", "UDOW"]
 INTRADAY = ["SPY", "QQQ", "IWM"]
-ALL_DAILY = sorted(set(CORE_DAILY + SECTORS + LEVERAGED + ["USO"]))
+LEVERAGED_EXT = ["SOXL", "TECL", "FAS", "LABU", "CURE", "DRN", "ERX", "NUGT", "TMF", "YINN", "SPXL", "MIDU", "RETL", "DPST"]
+EXTENDED = ["SMH", "XBI", "IBB", "GDX", "KWEB", "ARKK", "IGV", "ITB", "XME", "TAN", "URA", "EWJ", "EWZ", "INDA", "FXI"]
+CRYPTO = ["BTC/USD", "ETH/USD", "SOL/USD", "LTC/USD", "BCH/USD", "LINK/USD", "AVAX/USD", "DOGE/USD", "UNI/USD", "AAVE/USD"]
+ALL_DAILY = sorted(set(CORE_DAILY + SECTORS + LEVERAGED + ["USO"] + LEVERAGED_EXT + EXTENDED))
 
 
 def half_spread_bps(symbol: str) -> float:

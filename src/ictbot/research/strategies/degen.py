@@ -22,11 +22,12 @@ import pandas as pd
 
 from ..base import StrategySpec, register
 from ..engine import run_weights
+from .common import cap_to_margin
 from .levtrend import trend_state
 from .meanrev import positions, signals
 
 LETF = {"SPY": "UPRO", "QQQ": "TQQQ", "IWM": "TNA", "DIA": "UDOW"}
-MAX_MARGIN = 1.95  # stay just under the ~2x overnight buying power
+MAX_MARGIN = 1.95  # requested gross; cap_to_margin then applies the real 75% LETF requirement (~1.29x)
 
 MR_BASE = {"signal": "ibs", "exit_rule": "rsi2", "max_hold": 5, "allow_short": False}
 
@@ -57,7 +58,7 @@ def _size_meanrev(active: pd.DataFrame, margin: float, alloc: str) -> pd.DataFra
 def run_meanrev_letf(data, p, costs):
     index = data.dates()
     margin = min(float(p["margin"]), MAX_MARGIN)
-    w = _size_meanrev(_meanrev_matrix(data, p, index), margin, p["alloc"])
+    w = cap_to_margin(_size_meanrev(_meanrev_matrix(data, p, index), margin, p["alloc"]))
     res = run_weights(data, w, costs, band=0.02)
     res.notes.update({"time_in_market": float((w.sum(axis=1) > 0).mean()), "max_gross": float(w.sum(axis=1).max())})
     return res
@@ -65,8 +66,10 @@ def run_meanrev_letf(data, p, costs):
 
 def _trend_weights(data, index, lev: str, sma: int, margin: float) -> pd.DataFrame:
     und = {v: k for k, v in LETF.items()}[lev]
-    uc = data.daily[und]["close"].reindex(index)
-    state = trend_state(uc, sma, "band2").astype(bool)
+    # compute on the underlying's OWN bars (a missing bar in the union index would
+    # otherwise freeze the SMA for n sessions), then align to the common index
+    own = data.daily[und]["close"].sort_index()
+    state = trend_state(own, sma, "band2").reindex(index).ffill().fillna(0.0).astype(bool)
     ok = data.daily[lev]["close"].reindex(index).notna()
     return pd.DataFrame({lev: np.where(state & ok, margin, 0.0)}, index=index)
 
@@ -76,7 +79,7 @@ def run_trend_letf(data, p, costs):
     lev = p["lev"]
     if lev not in data.daily:
         raise ValueError(f"{lev} missing")
-    w = _trend_weights(data, index, lev, int(p["sma"]), min(float(p["margin"]), MAX_MARGIN))
+    w = cap_to_margin(_trend_weights(data, index, lev, int(p["sma"]), min(float(p["margin"]), MAX_MARGIN)))
     res = run_weights(data, w, costs, band=0.02)
     res.notes.update({"time_in_market": float((w.sum(axis=1) > 0).mean())})
     return res
@@ -91,6 +94,7 @@ def run_combo(data, p, costs):
     w = pd.DataFrame(0.0, index=index, columns=cols)
     w.loc[mr_on, mr.columns] = mr.loc[mr_on].to_numpy()
     w.loc[~mr_on, tr.columns] = tr.loc[~mr_on].to_numpy()
+    w = cap_to_margin(w)
     res = run_weights(data, w, costs, band=0.02)
     res.notes.update({"time_meanrev": float(mr_on.mean()), "time_trend": float(((~mr_on) & (tr.sum(axis=1) > 0)).mean())})
     return res

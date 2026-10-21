@@ -41,3 +41,29 @@ def hold_between_rebalances(w: pd.DataFrame, freq: str) -> pd.DataFrame:
     which the engine treats as "hold the drifted position, no trade"."""
     mask = rebalance_mask(w.index, freq)
     return w.where(mask, np.nan)
+
+
+# --------------------------------------------------------------------------- #
+# Broker margin capacity
+# --------------------------------------------------------------------------- #
+
+REG_T_INITIAL = 0.50  # Reg-T initial margin for ordinary long stock / ETFs
+LETF_MAINT_PER_X = 0.25  # FINRA 4210 / Notice 09-53: leveraged ETF maintenance = 25% x leverage factor
+MARGIN_BUFFER = 0.03  # stay a little inside the limit
+
+
+def margin_requirement(symbol: str) -> float:
+    from ..universe import INSTRUMENTS
+
+    inst = INSTRUMENTS.get(symbol)
+    lev = inst.leverage_factor if inst else 1.0
+    return min(1.0, max(REG_T_INITIAL, LETF_MAINT_PER_X * lev))
+
+
+def cap_to_margin(w: pd.DataFrame) -> pd.DataFrame:
+    """Scale each row so sum(|w_i| * requirement_i) <= 1 - buffer: the most a
+    margin account can hold (3x LETF -> ~1.29x gross, 1x ETF -> ~1.94x)."""
+    req = pd.Series({c: margin_requirement(c) for c in w.columns})
+    used = w.abs().mul(req, axis=1).sum(axis=1)
+    scale = ((1.0 - MARGIN_BUFFER) / used).clip(upper=1.0).fillna(1.0)
+    return w.mul(scale, axis=0)

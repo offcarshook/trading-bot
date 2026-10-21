@@ -60,12 +60,22 @@ def probabilistic_sharpe(returns: pd.Series, sr_benchmark: float = 0.0) -> float
     return float(stats.norm.cdf((sr - sr_benchmark) * math.sqrt(n - 1) / denom))
 
 
+def periods_per_year(returns: pd.Series) -> float:
+    """Observed sampling frequency (252 for stocks, ~365 for crypto)."""
+    r = returns.dropna()
+    if len(r) < 3:
+        return float(TRADING_DAYS)
+    span = (r.index[-1] - r.index[0]).days / 365.25
+    return float(len(r) / span) if span > 0 else float(TRADING_DAYS)
+
+
 def summarize(returns: pd.Series, exposure: pd.Series | None = None, turnover: pd.Series | None = None, n_trades: int | None = None, costs: pd.Series | None = None) -> dict:
     r = returns.dropna()
     if r.empty:
         return {"days": 0}
     eq = equity_curve(r)
-    years = len(r) / TRADING_DAYS
+    ppy = periods_per_year(r)
+    years = len(r) / ppy
     total = float(eq.iloc[-1] - 1.0)
     cagr = float(eq.iloc[-1] ** (1 / years) - 1) if years > 0 and eq.iloc[-1] > 0 else -1.0
     m = monthly_returns(r)
@@ -82,9 +92,9 @@ def summarize(returns: pd.Series, exposure: pd.Series | None = None, turnover: p
         "pct_positive_months": float((m > 0).mean()) if len(m) else 0.0,
         "best_month": float(m.max()) if len(m) else 0.0,
         "worst_month": float(m.min()) if len(m) else 0.0,
-        "ann_vol": float(r.std(ddof=1) * math.sqrt(TRADING_DAYS)),
-        "sharpe": sharpe(r),
-        "sortino": sortino(r),
+        "ann_vol": float(r.std(ddof=1) * math.sqrt(ppy)),
+        "sharpe": sharpe(r, int(round(ppy))),
+        "sortino": sortino(r, int(round(ppy))),
         "max_drawdown": mdd,
         "calmar": float(cagr / mdd) if mdd > 0 else 0.0,
         "psr_0": probabilistic_sharpe(r),

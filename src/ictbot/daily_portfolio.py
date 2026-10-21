@@ -31,7 +31,7 @@ import yaml
 from .execution import BrokerPosition, make_client_order_id, parse_client_order_id
 from .research.base import ResearchData, load_all_strategies
 from .research.costs import CostModel
-from .timeutils import NY, ny_dt
+from .timeutils import NY
 
 log = logging.getLogger(__name__)
 REQUIRED_KEYS = {"profile", "sleeves", "gross_cap", "rebalance_band", "max_drawdown_kill", "drawdown_reset_date",
@@ -67,8 +67,12 @@ def load_portfolio_config(path: str | Path) -> PortfolioConfig:
         raise ValueError(f"daily portfolio config: missing {sorted(missing)} unknown {sorted(unknown)}")
     sleeves = tuple(Sleeve(s["strategy"], float(s["weight"]), dict(s["params"])) for s in raw["sleeves"])
     kill = raw["max_drawdown_kill"]
+    reset = raw["drawdown_reset_date"]
+    reset = None if reset is None else (reset.isoformat() if hasattr(reset, "isoformat") else str(reset))
+    if reset:
+        dt.date.fromisoformat(reset)
     cfg = PortfolioConfig(raw["profile"], sleeves, float(raw["gross_cap"]), float(raw["rebalance_band"]), None if kill is None else float(kill),
-                          raw["drawdown_reset_date"], int(raw["history_calendar_days"]), str(raw["client_order_id_prefix"]),
+                          reset, int(raw["history_calendar_days"]), str(raw["client_order_id_prefix"]),
                           str(raw["window_start"]), str(raw["window_end"]))
     if not 0 < cfg.gross_cap <= HARD_GROSS_CAP:
         raise ValueError(f"gross_cap must be in (0, {HARD_GROSS_CAP}] - Alpaca rejects orders beyond ~2x overnight buying power")
@@ -136,6 +140,11 @@ def compute_targets(data: ResearchData, cfg: PortfolioConfig, costs: CostModel |
             combined[sym] = combined.get(sym, 0.0) + s.weight * float(val)
     gross = sum(abs(v) for v in combined.values())
     scale = min(1.0, cfg.gross_cap / gross) if gross > 0 else 1.0
+    from .research.strategies.common import MARGIN_BUFFER, margin_requirement
+
+    used = sum(abs(v) * scale * margin_requirement(k) for k, v in combined.items())
+    if used > 1.0 - MARGIN_BUFFER:  # e.g. 3x leveraged ETFs need 75% margin each
+        scale *= (1.0 - MARGIN_BUFFER) / used
     targets = {k: v * scale for k, v in combined.items()}
     return TargetResult(str(max(last_dates).date()) if last_dates else "", targets, gross, scale, sleeves_out)
 
@@ -191,59 +200,144 @@ def drawdown(equity: float, history: list[tuple[dt.date, float]], reset: str | N
     return (peak - equity) / peak if peak > 0 else 0.0
 
 
-def already_rebalanced_today(orders: list, prefix: str, today: dt.date) -> bool:
+def open_orders_today(orders: list, prefix: str, today: dt.date) -> list:
     tag = f"{today:%y%m%d}"
+    out = []
     for o in orders:
         meta = parse_client_order_id(o.client_order_id)
-        if meta and meta["prefix"] == prefix and meta["day"] == tag and o.status not in ("canceled", "rejected", "expired"):
-            return True
-    return False
+        if meta and meta["prefix"] == prefix and meta["day"] == tag and o.is_open:
+            out.append(o)
+    return out
 
 
 # --------------------------------------------------------------------------- #
 # Driver
 # --------------------------------------------------------------------------- #
 
+FILL_TIMEOUT_S = 90.0
+FILL_POLL_S = 3.0
+
+
+def _wait_filled(broker: Any, coids: list[str], sleep, timeout: float = FILL_TIMEOUT_S) -> dict[str, str]:
+    import time as _t
+
+    status: dict[str, str] = {}
+    deadline = _t.monotonic() + timeout
+    pending = list(coids)
+    while pending and _t.monotonic() < deadline:
+        for c in list(pending):
+            o = broker.order_by_client_id(c)
+            status[c] = o.status if o else "unknown"
+            if o is None or not o.is_open:
+                pending.remove(c)
+        if pending:
+            sleep(FILL_POLL_S)
+    return status
+
 
 def run_rebalance(cfg: PortfolioConfig, broker: Any, data: ResearchData, prices: dict[str, float], now: dt.datetime,
-                  dry_run: bool, force: bool, out_dir: Path) -> dict:
+                  dry_run: bool, force: bool, out_dir: Path, sleep=None) -> dict:
+    """Idempotent by construction: the plan is always (targets - CURRENT positions),
+    so re-running after a completed rebalance sends nothing. A run is skipped only
+    while earlier orders from today are still working."""
+    import time as _t
+
+    sleep = sleep or _t.sleep
     today = now.astimezone(NY).date()
-    acct = broker.account()
-    equity = float(acct.equity)
     report: dict[str, Any] = {"utc": dt.datetime.now(dt.timezone.utc).isoformat(), "ny_time": now.isoformat(), "profile": cfg.profile,
-                              "equity": equity, "dry_run": dry_run}
-    dd = drawdown(equity, broker.equity_history(), cfg.drawdown_reset_date)
-    report["drawdown"] = dd
-    positions = broker.positions()
-    todays_orders = broker.orders("all", after=ny_dt(today, dt.time(0)))
-    if cfg.max_drawdown_kill is not None and dd >= cfg.max_drawdown_kill:
-        targets = TargetResult("", {}, 0.0, 1.0)
-        report["kill_switch"] = True
-        log.critical("drawdown kill-switch: liquidating daily portfolio", extra={"drawdown": dd})
-    else:
-        if already_rebalanced_today(todays_orders, cfg.client_order_id_prefix, today) and not force:
-            report["skipped"] = "already rebalanced today"
-            _write(out_dir, today, report)
+                              "dry_run": dry_run, "errors": []}
+    try:
+        acct = broker.account()
+        equity = float(acct.equity)
+        report["equity"] = equity
+        dd = drawdown(equity, broker.equity_history(), cfg.drawdown_reset_date)
+        report["drawdown"] = dd
+        positions = broker.positions()
+        prices = dict(prices)
+        for p in positions:  # price every held symbol so leftovers from old configs can be exited
+            if not prices.get(p.symbol) and p.current_price:
+                prices[p.symbol] = float(p.current_price)
+        working = open_orders_today(broker.orders("open"), cfg.client_order_id_prefix, today)
+        if working and not force:
+            report["skipped"] = f"{len(working)} rebalance order(s) from today still working"
             return report
-        targets = compute_targets(data, cfg)
-    plan = plan_orders(targets.targets, positions, prices, equity, cfg.rebalance_band)
-    report.update({"decision_date": targets.decision_date, "targets": targets.targets, "gross_before_cap": targets.gross_before_cap,
-                   "scale": targets.scale, "sleeves": targets.sleeves,
-                   "positions_before": {p.symbol: p.qty for p in positions},
-                   "orders": [o.__dict__ for o in plan]})
-    sent = []
-    stamp = now.astimezone(NY).strftime("%H%M%S")
-    for i, o in enumerate(plan):
-        coid = make_client_order_id(cfg.client_order_id_prefix, today, o.symbol, f"r{stamp}{i:02d}", "d")
-        if dry_run:
-            sent.append({"symbol": o.symbol, "side": o.side, "qty": o.qty, "dry_run": True})
-            continue
-        res = broker.submit_market(symbol=o.symbol, side=o.side, qty=o.qty, client_order_id=coid)
-        sent.append({"symbol": o.symbol, "side": o.side, "qty": o.qty, "id": res.id, "status": res.status, "coid": coid})
-        log.info("rebalance order", extra=sent[-1])
-    report["sent"] = sent
-    _write(out_dir, today, report)
-    return report
+        if cfg.max_drawdown_kill is not None and dd >= cfg.max_drawdown_kill:
+            targets = TargetResult("", {}, 0.0, 1.0)
+            report["kill_switch"] = True
+            log.critical("drawdown kill-switch: liquidating everything", extra={"drawdown": dd})
+        else:
+            targets = compute_targets(data, cfg)
+        plan = plan_orders(targets.targets, positions, prices, equity, cfg.rebalance_band)
+        report.update({"decision_date": targets.decision_date, "targets": targets.targets, "gross_before_cap": targets.gross_before_cap,
+                       "scale": targets.scale, "sleeves": targets.sleeves, "positions_before": {p.symbol: p.qty for p in positions},
+                       "orders": [o.__dict__ for o in plan]})
+        sent: list[dict] = []
+        report["sent"] = sent
+        stamp = now.astimezone(NY).strftime("%H%M%S")
+        sells = [o for o in plan if o.side == "sell"]
+        buys = [o for o in plan if o.side == "buy"]
+
+        def submit(i: int, o: PlannedOrder, qty) -> str | None:
+            coid = make_client_order_id(cfg.client_order_id_prefix, today, o.symbol, f"r{stamp}{i:02d}", "d")
+            if dry_run:
+                sent.append({"symbol": o.symbol, "side": o.side, "qty": qty, "dry_run": True})
+                return None
+            try:
+                res = broker.submit_market(symbol=o.symbol, side=o.side, qty=qty, client_order_id=coid)
+                sent.append({"symbol": o.symbol, "side": o.side, "qty": qty, "id": res.id, "status": res.status, "coid": coid})
+                log.info("rebalance order", extra=sent[-1])
+                return coid
+            except Exception as exc:  # noqa: BLE001 - one rejection must not abort the rest
+                report["errors"].append({"symbol": o.symbol, "side": o.side, "qty": qty, "error": str(exc)[:300]})
+                log.error("order rejected", extra=report["errors"][-1])
+                return None
+
+        sell_ids = [c for c in (submit(i, o, o.qty) for i, o in enumerate(sells)) if c]
+        if sell_ids:
+            report["sell_status"] = _wait_filled(broker, sell_ids, sleep)
+        if buys and not dry_run:
+            acct = broker.account()
+            bp = float(getattr(acct, "buying_power", 0) or 0)
+            need = sum(o.qty * prices[o.symbol] for o in buys)
+            shrink = min(1.0, 0.98 * bp / need) if need > 0 and bp > 0 else (0.0 if need > 0 else 1.0)
+            report["buying_power"], report["buy_scale"] = bp, shrink
+        else:
+            shrink = 1.0
+        for j, o in enumerate(buys):
+            qty = int(math.floor(o.qty * shrink))
+            if qty >= 1:
+                submit(len(sells) + j, o, qty)
+        return report
+    except Exception as exc:  # noqa: BLE001
+        report["errors"].append({"fatal": str(exc)[:500]})
+        log.exception("rebalance failed")
+        raise
+    finally:
+        _write(out_dir, today, report)
+
+
+def simulate_portfolio(data: ResearchData, cfg: PortfolioConfig, costs: CostModel | None = None):
+    """Backtest EXACTLY what the bot trades: combined, capped daily targets,
+    the rebalance band, margin financing, next-open execution."""
+    from .research.engine import run_weights
+
+    costs = costs or CostModel()
+    specs = load_all_strategies()
+    frames = []
+    for s in cfg.sleeves:
+        w = specs[s.strategy].run(data, s.params, costs).weights.ffill().fillna(0.0)
+        frames.append(w * s.weight)
+    idx = frames[0].index
+    for f in frames[1:]:
+        idx = idx.union(f.index)
+    cols = sorted(set().union(*[f.columns for f in frames]))
+    total = sum(f.reindex(index=idx, columns=cols).fillna(0.0) for f in frames)
+    gross = total.abs().sum(axis=1)
+    total = total.mul((cfg.gross_cap / gross).clip(upper=1.0).fillna(1.0), axis=0)
+    from .research.strategies.common import cap_to_margin
+
+    total = cap_to_margin(total)
+    return run_weights(data, total, costs, band=cfg.rebalance_band)
 
 
 def _write(out_dir: Path, today: dt.date, report: dict) -> None:
