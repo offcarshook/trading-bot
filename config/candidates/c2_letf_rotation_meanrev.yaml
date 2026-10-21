@@ -1,0 +1,18 @@
+# CANDIDATE (pre-declared 2026-10-21, before any real-data result of the new strategies): weekly top-2 3x-ETF momentum rotation + 3x-ETF mean reversion; margin up to the broker cap.
+# See research/DEPLOY_RULE.md. PAPER ONLY. Not financial advice.
+profile: letf_rotation_meanrev
+sleeves:
+  - strategy: letf_momentum_rotation
+    weight: 1.0
+    params: {score: riskadj, top_n: 2, regime: cash, margin: 1.0, rebalance: W, band: 0.02}
+  - strategy: degen_meanrev_letf
+    weight: 1.0
+    params: {margin: 1.95, alloc: equal_slots, threshold: strict, vol_filter: true}
+gross_cap: 1.9
+rebalance_band: 0.02
+max_drawdown_kill: 0.60    # degen mode: catastrophe backstop only (liquidate + stop at -60% from peak)
+drawdown_reset_date: null
+history_calendar_days: 620
+client_order_id_prefix: dpf
+window_start: "09:31"
+window_end: "11:00"

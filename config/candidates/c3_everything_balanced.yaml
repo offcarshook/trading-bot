@@ -1,0 +1,18 @@
+# CANDIDATE (pre-declared 2026-10-21, before any real-data result of the new strategies): 60% 3x-ETF rotation / 40% crypto trend; cash only (crypto cannot be margined).
+# See research/DEPLOY_RULE.md. PAPER ONLY. Not financial advice.
+profile: everything_balanced
+sleeves:
+  - strategy: letf_momentum_rotation
+    weight: 0.6
+    params: {score: riskadj, top_n: 2, regime: cash, margin: 1.0, rebalance: W, band: 0.02}
+  - strategy: crypto_trend
+    weight: 0.4
+    params: {coins: btc_eth, rule: sma_band, n: 50, sizing: equal, rebalance: D}
+gross_cap: 1.0
+rebalance_band: 0.02
+max_drawdown_kill: 0.60    # degen mode: catastrophe backstop only (liquidate + stop at -60% from peak)
+drawdown_reset_date: null
+history_calendar_days: 620
+client_order_id_prefix: dpf
+window_start: "09:31"
+window_end: "11:00"
