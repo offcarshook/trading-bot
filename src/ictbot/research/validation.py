@@ -284,7 +284,7 @@ def regime_breakdown(returns: pd.Series, labels: pd.Series) -> dict:
 
 def lever(returns: pd.Series, leverage: float, margin_rate: float = 0.07, base_exposure: pd.Series | None = None) -> pd.Series:
     """Scale an unlevered strategy. Borrowing cost applies to exposure above 1x of equity."""
-    expo = base_exposure.reindex(returns.index).fillna(1.0) if base_exposure is not None else pd.Series(1.0, returns.index)
+    expo = base_exposure.reindex(returns.index).fillna(0.0) if base_exposure is not None else pd.Series(1.0, returns.index)
     borrowed = np.maximum(0.0, leverage * expo - 1.0)
     return leverage * returns - borrowed * margin_rate / TRADING_DAYS
 
@@ -303,7 +303,9 @@ def leverage_analysis(returns: pd.Series, targets: tuple[float, ...] = (0.05, 0.
         rows.append({"leverage": float(L), "monthly_geo": geo, "max_dd": max_drawdown(rl), "ruined": bool((1 + rl).cumprod().min() < 0.05)})
     table = pd.DataFrame(rows)
     mu, var = r.mean(), r.var(ddof=1)
-    kelly = float(mu / var) if var > 0 else 0.0
+    avg_expo = float(exposure.reindex(r.index).fillna(0).mean()) if exposure is not None else 1.0
+    mu_fin = mu - avg_expo * margin_rate / TRADING_DAYS  # each extra 1x of exposure is financed
+    kelly = float(mu_fin / var) if var > 0 else 0.0
     best_geo = table.loc[table["monthly_geo"].idxmax()]
     out = {"kelly_leverage": kelly, "growth_optimal_leverage_hist": float(best_geo["leverage"]), "max_monthly_geo_any_leverage": float(best_geo["monthly_geo"]), "targets": {}}
     for tgt in targets:
@@ -316,6 +318,7 @@ def leverage_analysis(returns: pd.Series, targets: tuple[float, ...] = (0.05, 0.
         boot = bootstrap_summary(rl, n_sims=n_boot, seed=seed)
         out["targets"][f"{tgt:.0%}"] = {"reachable_historically": True, "leverage_needed": L, "hist_max_dd": float(hit["max_dd"].iloc[0]),
                                         "vs_kelly": L / kelly if kelly > 0 else None, "bootstrap_1y": boot,
-                                        "broker_feasible_overnight_2x": L * float(exposure.mean() if exposure is not None else 1.0) <= 2.0}
+                                        "max_gross_exposure_needed": float(L * (exposure.max() if exposure is not None else 1.0)),
+                                        "broker_feasible_overnight_2x": L * float(exposure.max() if exposure is not None else 1.0) <= 2.0}
     out["table"] = table[table["leverage"].isin([1, 2, 3, 4, 5, 8, 10, 15, 20])].to_dict("records")
     return out

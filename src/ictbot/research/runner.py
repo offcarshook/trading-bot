@@ -186,7 +186,14 @@ def explore_strategy(spec: StrategySpec, data: ResearchData, splits: V.Splits, c
             null["method"] = "block_bootstrap_mean"
 
     regimes = V.regime_breakdown(V.cut(best.returns, tr_s, va_e), labels)
-    lev_wf = V.leverage_analysis(wf["oos_returns"], MONTHLY_TARGETS, costs.margin_rate) if len(wf["oos_returns"]) > 60 else {}
+    # exposure of whichever trial walk-forward picked for each block, so margin
+    # interest is only charged on days the strategy actually holds positions
+    wf_expo = []
+    for ch in wf["choices"]:
+        e = results[ch["chosen"]].exposure
+        wf_expo.append(e[(e.index >= pd.Timestamp(ch["from"])) & (e.index <= pd.Timestamp(ch["to"]))])
+    wf_exposure = pd.concat(wf_expo) if wf_expo else None
+    lev_wf = V.leverage_analysis(wf["oos_returns"], MONTHLY_TARGETS, costs.margin_rate, exposure=wf_exposure) if len(wf["oos_returns"]) > 60 else {}
 
     c = CRITERIA
     checks = {
@@ -208,7 +215,7 @@ def explore_strategy(spec: StrategySpec, data: ResearchData, splits: V.Splits, c
         "sensitivity_train": sens, "cost_stress_2x_validation": stress_val, "null_test": null, "regimes_train_val": regimes,
         "leverage_on_walkforward_oos": lev_wf, "checks": checks, "survives": all(checks.values()),
         "trials": trial_rows, "seconds": round(time.time() - t0, 1),
-        "_series": {"best_full": best.returns, "wf_oos": wf["oos_returns"]},
+        "_series": {"best_full": best.returns, "wf_oos": wf["oos_returns"], "wf_exposure": wf_exposure},
     }
 
 
@@ -323,7 +330,7 @@ def run_test(data_full: ResearchData, frozen_path: Path, results_root: Path, rea
         te = res.slice(*splits.test)
         m = summarize(te.returns, te.exposure, te.turnover, te.n_trades, te.costs)
         stressed = summarize(spec.run(data_full, cand["params"], costs.stressed(2.0)).slice(*splits.test).returns)
-        lev = V.leverage_analysis(te.returns, MONTHLY_TARGETS, costs.margin_rate)
+        lev = V.leverage_analysis(te.returns, MONTHLY_TARGETS, costs.margin_rate, exposure=te.exposure)
         out["candidates"].append({"strategy": cand["strategy"], "params": cand["params"], "test": m, "test_cost_stress_2x": stressed,
                                   "leverage_on_test": lev, "bootstrap_1y": V.bootstrap_summary(te.returns, n_sims=1000)})
         series[cand["strategy"]] = {"test": te.returns}

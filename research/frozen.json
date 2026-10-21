@@ -1,0 +1,78 @@
+{
+ "frozen_utc": "2026-10-21",
+ "source_explore_commit": "5147126898a580fefa800960a4689abc25dfa9d7",
+ "source_run": "39633867929",
+ "note": "NO strategy passed every pre-registered check. These are the four best near-misses by walk-forward OOS Sharpe, frozen with their TRAIN-selected parameters (no change after seeing validation) and evaluated ONCE on the locked test period for information only. They are not validated candidates.",
+ "candidates": [
+  {
+   "strategy": "leveraged_trend",
+   "params": {
+    "lev": "QLD",
+    "sma": 150,
+    "filter": "band2",
+    "defensive": "IEF"
+   },
+   "selected_on": "train Sharpe",
+   "passed_all_checks": false,
+   "failed_checks": [
+    "validation_sharpe",
+    "enough_trades"
+   ]
+  },
+  {
+   "strategy": "meanrev_regime",
+   "params": {
+    "signal": "ibs",
+    "threshold": "strict",
+    "exit_rule": "rsi2",
+    "max_hold": 5,
+    "vol_filter": true,
+    "allow_short": false,
+    "gross": 1.0,
+    "band": 0.02
+   },
+   "selected_on": "train Sharpe",
+   "passed_all_checks": false,
+   "failed_checks": [
+    "validation_sharpe"
+   ]
+  },
+  {
+   "strategy": "regime_allocation",
+   "params": {
+    "trend_sma": 100,
+    "bond_sma": 50,
+    "vol_filter": true,
+    "alloc_map": "defensive",
+    "min_hold": 5,
+    "band": 0.05
+   },
+   "selected_on": "train Sharpe",
+   "passed_all_checks": false,
+   "failed_checks": [
+    "validation_sharpe",
+    "validation_cagr",
+    "pbo",
+    "null_test",
+    "cost_stress_2x"
+   ]
+  },
+  {
+   "strategy": "xsmom_sector_rotation",
+   "params": {
+    "lookback": "blend_1_3_6_12",
+    "top_n": 4,
+    "rebalance": "W",
+    "abs_filter": false,
+    "market_filter": true,
+    "band": 0.01
+   },
+   "selected_on": "train Sharpe",
+   "passed_all_checks": false,
+   "failed_checks": [
+    "dsr_train",
+    "null_test"
+   ]
+  }
+ ]
+}
