@@ -1,0 +1,60 @@
+# Independent end-of-day safety net: cancels every open order and closes every
+# position at session.flatten_time (15:55 ET) even if the trading job died.
+# Two UTC triggers for DST; the command exits unless NY time is within 25 min
+# before the flatten time, then waits and flattens:
+#   19:41 UTC = 15:41 EDT (runs) | 14:41 EST (exits)
+#   20:41 UTC = 16:41 EDT (exits, market closed) | 15:41 EST (runs)
+# GitHub cron is best-effort; if it starts after the close the next morning's
+# trading job flattens any leftover position at the open.
+name: safety flatten (paper)
+
+on:
+  schedule:
+    - cron: "41 19 * * 1-5"
+    - cron: "41 20 * * 1-5"
+  workflow_dispatch:
+    inputs:
+      force:
+        description: "Flatten immediately, ignoring the time window"
+        type: boolean
+        default: false
+
+concurrency:
+  group: ictbot-flatten       # separate group: must not wait behind the trading job
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  flatten:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    env:
+      APCA_API_KEY_ID: ${{ secrets.APCA_API_KEY_ID }}
+      APCA_API_SECRET_KEY: ${{ secrets.APCA_API_SECRET_KEY }}
+      TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+      TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+      PYTHONUNBUFFERED: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - name: Install
+        run: |
+          pip install -r requirements.txt
+          pip install -e . --no-deps
+      - name: Flatten
+        run: |
+          if [ "${{ inputs.force }}" = "true" ]; then python -m ictbot flatten --force; else python -m ictbot flatten; fi
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ictbot-flatten-${{ github.run_id }}
+          path: |
+            logs/
+            reports/
+          if-no-files-found: ignore
+          retention-days: 30

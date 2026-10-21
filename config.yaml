@@ -1,0 +1,187 @@
+# ---------------------------------------------------------------------------
+# ICT paper-trading bot configuration.  EDUCATIONAL / EXPERIMENTAL ONLY.
+# Nothing here is a recommendation; defaults are arbitrary starting points,
+# not optimised or proven parameters.  Every key is validated on load and
+# unknown keys are rejected.  All times are America/New_York.
+# ---------------------------------------------------------------------------
+
+symbols: [SPY, QQQ]           # QQQ: far more liquid on IEX than QQQM
+
+mode:
+  dry_run: false              # true = compute + log signals, never send orders
+
+data:
+  feed: iex                   # free plan = IEX real-time only (~2-3% of US volume)
+  history_days: 45            # calendar days of 1-min history to warm up indicators/levels
+  intraday_lookback_sessions: 5      # prior sessions kept in the 5m / 1h frames
+  bar_completion_delay_seconds: 20   # a 5m bar counts as complete this long after it ends
+  poll_offset_seconds: 30     # wake this long after each 5-min boundary (must be > delay above)
+  max_data_staleness_seconds: 420    # newest 1m bar older than this -> no new entries
+  min_minutes_per_5m_bar: 3   # 5m bars built from fewer 1m bars are flagged sparse
+  sparse_warn_ratio: 0.8      # warn if < 80% of expected 1m bars arrived today
+  include_premarket_for_levels: true # premarket H/L used as liquidity (never traded)
+  cache_dir: data_cache
+
+session:
+  flatten_time: "15:55"
+  no_new_entries_minutes_before_close: 30
+  skip_early_close_days: true
+  skip_event_days: true
+  event_days_file: config/event_days.yaml
+  kill_zones:
+    - {name: ny_open, start: "09:30", end: "11:00", enabled: true}
+    - {name: silver_bullet, start: "10:00", end: "11:00", enabled: false}
+  silver_bullet_window: {name: silver_bullet, start: "10:00", end: "11:00", enabled: true}  # score bonus only
+  level_sessions:
+    - {name: premarket, start: "04:00", end: "09:30", enabled: true}
+  opening_range_minutes: 15
+  earliest_start: "08:30"     # GitHub cron DST guard: exit if started before this...
+  latest_start: "11:00"       # ...or after this (NY time)
+  max_runtime_minutes: 340    # GitHub-hosted jobs die at 360 min
+  exit_when_idle_after_windows: true   # stop early when flat and no window remains
+
+indicators:
+  atr_period: 14
+  swing_lookback: 2           # fractal: N bars each side
+  correlation_window_bars: 390
+
+ict:
+  liquidity:
+    use_prev_day: true
+    use_prev_week: true
+    use_level_sessions: true
+    use_opening_range: true
+    use_swings: true
+    use_equal_levels: true
+    swing_pool_lookback_bars: 156     # ~2 sessions of 5m bars
+    equal_level_atr_tolerance: 0.10   # swings within 0.1*ATR are "equal"
+    equal_level_min_touches: 2
+  sweep:
+    min_buffer_atr: 0.05      # must trade beyond the pool by >= 0.05*ATR...
+    min_buffer_abs: 0.02      # ...and by at least $0.02
+    reclaim_within_bars: 2    # must CLOSE back inside within k bars
+  displacement:
+    min_body_atr: 1.2
+    max_wick_fraction: 0.35   # wicks <= 35% of the candle range
+  mss:
+    max_bars_after_sweep: 12
+  fvg:
+    min_size_atr: 0.10
+    entry_mode: midpoint      # midpoint (consequent encroachment) | edge
+    order_expiry_bars: 6
+    max_setup_age_bars: 3     # setups confirmed more than 3 bars ago are ignored
+  order_block:
+    enabled: true
+    required: false
+  premium_discount:
+    enabled: true
+    required: true
+    range_source: leg         # leg (sweep extreme -> displacement extreme) | session
+  htf_bias:
+    enabled: true
+    method: structure         # structure (swing HH/HL vs LH/LL) | ema
+    combine: both_agree       # both_agree | daily_only | hourly_only | either
+    daily_swing_lookback: 2
+    hourly_swing_lookback: 2
+    ema_period: 20
+    allow_neutral: true
+    counter_bias_requires_htf_sweep: true
+    htf_pool_kinds: [prev_day, prev_week, level_session]
+  scoring:
+    base: 1.0
+    htf_aligned: 2.0
+    htf_pool_swept: 1.5
+    equal_levels_swept: 1.0
+    order_block: 1.0
+    premium_discount: 1.0
+    silver_bullet: 0.5
+    displacement_per_atr: 0.5
+    displacement_cap: 1.5
+    reward_risk_per_r: 0.5
+    reward_risk_cap: 1.5
+    sparse_data_penalty: 1.0
+    min_score: 3.0
+
+execution:
+  stop_buffer_atr: 0.10
+  target_buffer_atr: 0.0      # >0 = exit slightly before the target pool
+  min_reward_risk: 2.0
+  bracket_time_in_force: gtc  # gtc keeps the stop alive if the bot dies (see README)
+  allow_short: true
+  tick_size: 0.01
+  client_order_id_prefix: ictb
+  cancel_if_target_hit_before_fill: true
+  order_status_poll_seconds: 2.0
+  order_status_timeout_seconds: 30.0
+  partial_take_profit:
+    enabled: false            # implemented as TWO independent brackets
+    fraction: 0.5
+    at_r: 1.0
+  break_even:
+    enabled: false            # moves the server-side stop leg via PATCH
+    trigger_r: 1.0
+    offset: 0.01
+
+risk:
+  risk_per_trade_pct: 0.5
+  max_position_notional_pct: 25.0
+  max_total_notional_pct: 50.0
+  daily_loss_limit_pct: 2.0
+  weekly_loss_limit_pct: 4.0
+  max_drawdown_pct: 8.0
+  drawdown_reset_date: null   # set to today's date (YYYY-MM-DD) to reset the kill-switch
+  max_trades_per_day: 2
+  max_consecutive_losses: 3
+  cooldown_minutes_after_loss: 30
+  max_spread_bps: 5.0
+  max_spread_atr_fraction: 0.25
+  min_bar_volume: 1000        # IEX-feed shares in the signal bar
+  min_relative_volume: 0.3    # signal-bar volume vs same-feed 20-bar average
+  max_quote_age_seconds: 60
+  min_equity: 2000
+  min_stop_distance_atr: 0.25
+  flatten_on_daily_limit: true
+  vol_scaling:
+    enabled: true
+    target_atr_pct: 0.15
+    min_scale: 0.5
+    max_scale: 1.0
+
+portfolio:
+  buckets:
+    - name: us_large_cap_beta
+      symbols: [SPY, QQQM, QQQ, VOO, IVV]
+      max_open_risk_multiple: 1.5   # aggregate open risk <= 1.5x single-trade risk
+  conflict_mode: best         # best = take higher score | split = halve risk across both
+  allow_opposite_directions_in_bucket: false
+  second_same_direction_risk_fraction: 0.5
+
+backtest:
+  enabled: true
+  start: "2025-01-02"
+  end: "2025-12-31"
+  holdout_fraction: 0.3       # last 30% of days are out-of-sample, never tuned on
+  initial_equity: 100000
+  entry_slippage_bps: 0.0
+  stop_slippage_bps: 2.0
+  market_slippage_bps: 1.0
+  commission_per_share: 0.0
+  sec_fee_rate: 0.0000278     # CHECK the current SEC Section 31 rate
+  taf_per_share: 0.000166     # CHECK the current FINRA TAF
+  taf_max_per_trade: 8.30
+  fill_requires_trade_through: true
+  walk_forward:
+    enabled: false
+    folds: 4
+
+reporting:
+  reports_dir: reports
+  logs_dir: logs
+  summary_lookback_days: 90
+  benchmark_symbol: SPY
+
+alerts:
+  enabled: true               # only fires if TELEGRAM_* or SMTP_* secrets exist
+  on_fill: true
+  on_halt: true
+  on_error: true

@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ictbot"
+version = "0.1.0"
+description = "Educational ICT-concept intraday PAPER-trading bot for SPY/QQQM on Alpaca. Not financial advice."
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "alpaca-py>=0.44,<0.45",
+    "pandas>=2.1",
+    "numpy>=1.26",
+    "PyYAML>=6.0",
+    "matplotlib>=3.8",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8"]
+
+[project.scripts]
+ictbot = "ictbot.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"

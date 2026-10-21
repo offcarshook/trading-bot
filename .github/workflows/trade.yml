@@ -1,0 +1,88 @@
+# Daily PAPER-trading session.
+#
+# DST handling: GitHub cron is UTC-only, so we fire at TWO UTC times. The bot
+# checks the America/New_York wall clock and exits immediately unless it is
+# between session.earliest_start (08:30) and session.latest_start (11:00):
+#   13:17 UTC = 09:17 EDT (runs, summer) | 08:17 EST (exits, winter)
+#   14:17 UTC = 10:17 EDT (queued behind the first run, then exits) | 09:17 EST (runs, winter)
+# Odd minutes (:17) are used because GitHub delays top-of-hour cron jobs most.
+# Holidays / early closes come from Alpaca's calendar inside the bot.
+name: trade (paper)
+
+on:
+  schedule:
+    - cron: "17 13 * * 1-5"
+    - cron: "17 14 * * 1-5"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Log signals only, send no orders"
+        type: boolean
+        default: true
+      ignore_start_window:
+        description: "Skip the NY start-time gate (manual runs)"
+        type: boolean
+        default: true
+
+concurrency:
+  group: ictbot-trade
+  cancel-in-progress: false   # never kill a running session mid-trade
+
+permissions:
+  contents: read
+
+jobs:
+  trade:
+    runs-on: ubuntu-latest
+    timeout-minutes: 355        # hosted runners hard-stop at 360; bot exits at max_runtime_minutes (340)
+    env:
+      APCA_API_KEY_ID: ${{ secrets.APCA_API_KEY_ID }}
+      APCA_API_SECRET_KEY: ${{ secrets.APCA_API_SECRET_KEY }}
+      TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+      TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+      SMTP_HOST: ${{ secrets.SMTP_HOST }}
+      SMTP_PORT: ${{ secrets.SMTP_PORT }}
+      SMTP_USER: ${{ secrets.SMTP_USER }}
+      SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
+      ALERT_EMAIL_TO: ${{ secrets.ALERT_EMAIL_TO }}
+      ICTBOT_TRADING_ENABLED: ${{ vars.ICTBOT_TRADING_ENABLED || 'true' }}
+      PYTHONUNBUFFERED: "1"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install -e . --no-deps
+
+      - name: Trade
+        run: |
+          ARGS=""
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            [ "${{ inputs.dry_run }}" = "true" ] && ARGS="$ARGS --dry-run"
+            [ "${{ inputs.ignore_start_window }}" = "true" ] && ARGS="$ARGS --ignore-start-window"
+          fi
+          python -m ictbot run $ARGS
+
+      - name: Cumulative report
+        if: always()
+        continue-on-error: true
+        run: python -m ictbot report
+
+      - name: Upload logs and reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ictbot-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            logs/
+            reports/
+            state/
+          if-no-files-found: ignore
+          retention-days: 30

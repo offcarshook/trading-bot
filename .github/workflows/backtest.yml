@@ -1,0 +1,59 @@
+# OPTIONAL. Manual only. Downloads 1-minute history (cached between runs),
+# runs the backtest with slippage + fees, and reports in-sample vs held-out
+# metrics. Set backtest.enabled: false in config.yaml to switch it off.
+name: backtest (optional)
+
+on:
+  workflow_dispatch:
+    inputs:
+      start:
+        description: "Start date YYYY-MM-DD (blank = config)"
+        required: false
+      end:
+        description: "End date YYYY-MM-DD (blank = config)"
+        required: false
+
+concurrency:
+  group: ictbot-backtest
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  backtest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    env:
+      APCA_API_KEY_ID: ${{ secrets.APCA_API_KEY_ID }}
+      APCA_API_SECRET_KEY: ${{ secrets.APCA_API_SECRET_KEY }}
+      PYTHONUNBUFFERED: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - run: |
+          pip install -r requirements.txt
+          pip install -e . --no-deps
+      - uses: actions/cache@v4
+        with:
+          path: data_cache
+          key: minute-bars-${{ github.run_id }}
+          restore-keys: minute-bars-
+      - name: Backtest
+        run: |
+          ARGS=""
+          [ -n "${{ inputs.start }}" ] && ARGS="$ARGS --start ${{ inputs.start }}"
+          [ -n "${{ inputs.end }}" ] && ARGS="$ARGS --end ${{ inputs.end }}"
+          python -m ictbot backtest $ARGS
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ictbot-backtest-${{ github.run_id }}
+          path: |
+            reports/
+            logs/
+          if-no-files-found: ignore
+          retention-days: 30

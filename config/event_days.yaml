@@ -1,0 +1,12 @@
+# High-impact US macro event days on which the bot takes NO new entries.
+# Maintain this list yourself. Dates below were collected on 2026-10-21 from
+# BLS release calendars and third-party FOMC calendars - VERIFY them against
+# https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm and
+# https://www.bls.gov/schedule/ before relying on them.
+events:
+  - {date: "2026-10-28", name: "FOMC decision"}
+  - {date: "2026-11-06", name: "Employment Situation (NFP)"}
+  - {date: "2026-11-10", name: "CPI"}
+  - {date: "2026-12-04", name: "Employment Situation (NFP)"}
+  - {date: "2026-12-09", name: "FOMC decision"}
+  - {date: "2026-12-10", name: "CPI"}
