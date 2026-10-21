@@ -6,3 +6,4 @@ run 39634693236 action=explore only=leveraged_trend,meanrev_regime,xsmom_sector_
 run 39638716232 action=test only= commit=9c273c6a84e5ede67e1d9685aa67af947d1e3b2e
 run 39638704125 action=explore only=degen_meanrev_letf,degen_trend_letf,degen_combo commit=9c273c6a84e5ede67e1d9685aa67af947d1e3b2e
 run 39640786088 action=portfolio-sim only= commit=9ee48b4ae00b8a1b8fef013bddcb7cf757c645c0
+run 39640782168 action=explore only=degen_meanrev_letf,degen_trend_letf,degen_combo commit=9ee48b4ae00b8a1b8fef013bddcb7cf757c645c0
