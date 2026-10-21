@@ -26,6 +26,7 @@ the trades it skipped and why, so you can study how the rules behave.
 9. [Verified Alpaca facts this design relies on](#9-verified-alpaca-facts)
 10. [Known limitations](#10-known-limitations)
 11. [Honest self-review: where this can fail or be misread](#11-honest-self-review)
+12. [Daily multi-strategy portfolio ("degen mode")](#12-daily-multi-strategy-portfolio-degen-mode)
 
 ---
 
@@ -361,3 +362,74 @@ Where the strategy itself can fail, and where its output is easy to misread:
 
 **Reminder: this is not financial advice.** It is a learning tool for exploring how discretionary
 trading ideas behave once written down as strict rules. Use paper money only.
+
+---
+
+## 12. Daily multi-strategy portfolio ("degen mode")
+
+The ICT intraday bot is paused (its schedules are commented out). It traded
+about three times a year and risked 0.03-0.1% per trade. A second bot,
+`python -m ictbot rebalance`, runs a **daily, long-only, multi-strategy
+portfolio** on the same Alpaca **paper** account. Its sleeves are the research
+strategies in `src/ictbot/research/strategies/`, so live targets come from the
+exact code that was backtested.
+
+**Every run:**
+
+1. Load adjusted daily bars through the last *completed* session (SIP history).
+   Crypto bars come through the last complete UTC day.
+2. Run each sleeve's strategy and read its latest target weights.
+3. Sum the sleeves (each × its `weight`), then cap the total twice: at
+   `gross_cap`, and at Alpaca's margin limits.
+4. Send market orders only for the gaps bigger than `rebalance_band`. Sells go
+   first, then buys sized to the buying power that is really left.
+
+**Broker limits are enforced, never assumed away.**
+
+| Asset | Margin requirement | Max gross on its own |
+|---|---|---|
+| Ordinary ETF | Reg-T 50% | ~1.94x |
+| 3x leveraged ETF | 75% (FINRA 4210: 25% × leverage) | ~1.29x |
+| Crypto | 100%, cash only (not marginable at Alpaca) | 1.0x |
+
+A config that contains crypto must use `gross_cap <= 1.0`; its leverage then
+comes only from leveraged ETFs. 50x or 100x leverage is impossible at Alpaca.
+In the backtests it was wiped out repeatedly.
+
+**Schedules** (`.github/workflows/daily-portfolio.yml`):
+
+| Trigger (UTC) | Runs | Manages |
+|---|---|---|
+| 13:37 and 14:37, Mon-Fri | 09:37 NY, whichever trigger falls in the 09:31-11:00 window (the other exits) | stocks/ETFs only (`--asset-class stocks`) |
+| 00:07 daily | right after Alpaca's daily crypto bar closes | crypto only (`--asset-class crypto`); does nothing if the config has no crypto |
+
+Each run touches only its own asset class, so the stock run never sells your
+coins and the crypto run never sells your ETFs. A second run on the same day
+sends nothing new: the plan is always targets minus current positions.
+
+**Controls.**
+
+| You want to... | Do this |
+|---|---|
+| See today's targets and orders without trading | Actions → *daily portfolio (paper)* → Run workflow with `dry_run` on (the default) and `asset_class` = `stocks` or `crypto` |
+| Rebalance right now | Same, with `dry_run` off and `force` on |
+| Switch strategy mix | Copy a file from `config/candidates/` over `config/daily_portfolio.yaml`, commit, push |
+| Simulate a config exactly as traded | Actions → *research* → `action=portfolio-sim`, `portfolio_configs=<file>` (results on the `research-results` branch) |
+| Stop it | Disable the *daily portfolio (paper)* workflow |
+
+**Kill switch.** When equity falls `max_drawdown_kill` below its peak, the
+bot liquidates and stops. The degen configs set it to 60%: a catastrophe
+backstop, not a risk limit. To restart, set `drawdown_reset_date` in the
+config.
+
+**How the deployed mix was chosen.** See `research/DEPLOY_RULE.md`, which was
+committed *before* any candidate was simulated. Candidates are ranked on a
+pre-declared 2021-2023 window. The 2024+ test period is reported, never used
+to choose. Results are on the `research-results` branch.
+
+**Honest expectations.** No strategy here passed every pre-registered check.
+High-growth mixes come with 40-60% historical drawdowns. Leveraged-ETF
+backtests are biased upward, because funds that died are missing from the
+universe. Simulated results are not predictions, and this is not financial
+advice.
+
