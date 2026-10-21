@@ -4,3 +4,4 @@ run 39633867929 action=explore only= commit=5147126898a580fefa800960a4689abc25df
 run 39634704141 action=test only= commit=1f9e549e94d9d01df49e61098de3619aee7b5983
 run 39634693236 action=explore only=leveraged_trend,meanrev_regime,xsmom_sector_rotation,regime_allocation commit=1f9e549e94d9d01df49e61098de3619aee7b5983
 run 39638716232 action=test only= commit=9c273c6a84e5ede67e1d9685aa67af947d1e3b2e
+run 39638704125 action=explore only=degen_meanrev_letf,degen_trend_letf,degen_combo commit=9c273c6a84e5ede67e1d9685aa67af947d1e3b2e
