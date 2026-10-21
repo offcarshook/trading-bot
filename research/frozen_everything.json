@@ -1,0 +1,119 @@
+{
+ "frozen_utc": "2026-10-21",
+ "note": "'TRADE EVERYTHING' candidates, frozen BEFORE any real-data result for the four new strategies: each new strategy at its builder's pre-registered default_params, plus the max-margin (1.95 requested, broker-capped by cap_to_margin) variant of the two ETF rotations. The six degen candidates from frozen_degen.json are re-included with IDENTICAL params: their access-#2 test numbers were computed before the broker-feasibility fix (cap_to_margin, missing-bar P&L), so this is a re-score of the same a-priori choices, not a re-selection. 12 candidates -> multiple-testing caveat applies; crypto candidates use adaptive splits (test = last 25% of BTC/ETH history).",
+ "candidates": [
+  {
+   "strategy": "crypto_trend",
+   "params": {
+    "coins": "btc_eth",
+    "rule": "sma_band",
+    "n": 50,
+    "sizing": "equal",
+    "rebalance": "D"
+   }
+  },
+  {
+   "strategy": "crypto_momentum_rotation",
+   "params": {
+    "lookback": "blend",
+    "top_n": 2,
+    "regime_n": 100,
+    "rebalance": "W"
+   }
+  },
+  {
+   "strategy": "letf_momentum_rotation",
+   "params": {
+    "score": "riskadj",
+    "top_n": 2,
+    "regime": "cash",
+    "margin": 1.0,
+    "rebalance": "W",
+    "band": 0.02
+   }
+  },
+  {
+   "strategy": "letf_momentum_rotation",
+   "params": {
+    "score": "riskadj",
+    "top_n": 2,
+    "regime": "cash",
+    "margin": 1.95,
+    "rebalance": "W",
+    "band": 0.02
+   }
+  },
+  {
+   "strategy": "broad_etf_momentum",
+   "params": {
+    "score": "blend_1_3_6_12",
+    "top_n": 5,
+    "margin": 1.5,
+    "rebalance": "M",
+    "band": 0.01
+   }
+  },
+  {
+   "strategy": "broad_etf_momentum",
+   "params": {
+    "score": "blend_1_3_6_12",
+    "top_n": 5,
+    "margin": 1.95,
+    "rebalance": "M",
+    "band": 0.01
+   }
+  },
+  {
+   "strategy": "degen_meanrev_letf",
+   "params": {
+    "margin": 1.95,
+    "alloc": "concentrate",
+    "threshold": "strict",
+    "vol_filter": true
+   }
+  },
+  {
+   "strategy": "degen_meanrev_letf",
+   "params": {
+    "margin": 1.95,
+    "alloc": "equal_slots",
+    "threshold": "strict",
+    "vol_filter": true
+   }
+  },
+  {
+   "strategy": "degen_trend_letf",
+   "params": {
+    "lev": "TQQQ",
+    "sma": 150,
+    "margin": 1.95
+   }
+  },
+  {
+   "strategy": "degen_trend_letf",
+   "params": {
+    "lev": "TQQQ",
+    "sma": 150,
+    "margin": 1.0
+   }
+  },
+  {
+   "strategy": "degen_combo",
+   "params": {
+    "trend_margin": 1.95,
+    "sma": 150,
+    "threshold": "strict",
+    "vol_filter": true
+   }
+  },
+  {
+   "strategy": "degen_combo",
+   "params": {
+    "trend_margin": 1.0,
+    "sma": 150,
+    "threshold": "strict",
+    "vol_filter": true
+   }
+  }
+ ]
+}
