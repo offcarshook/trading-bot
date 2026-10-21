@@ -1,0 +1,87 @@
+# Quant research harness (PAPER research only - reads historical market data,
+# never places orders). Results are committed to the `research-results` branch
+# so they can be reviewed without downloading artifacts.
+name: research
+
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: "explore | ict-baseline | test (test needs research/frozen.json + reason)"
+        default: "explore"
+      only:
+        description: "Comma-separated strategy names (blank = all)"
+        default: ""
+      reason:
+        description: "Required for action=test: why the locked test period is being opened"
+        default: ""
+      no_null:
+        description: "Skip the slow position-shift null test"
+        type: boolean
+        default: false
+
+concurrency:
+  group: ictbot-research-${{ inputs.action }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write   # push results to the research-results branch only
+
+jobs:
+  research:
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    env:
+      APCA_API_KEY_ID: ${{ secrets.APCA_API_KEY_ID }}
+      APCA_API_SECRET_KEY: ${{ secrets.APCA_API_SECRET_KEY }}
+      PYTHONUNBUFFERED: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - name: Install
+        run: |
+          pip install -r requirements.txt
+          pip install -e . --no-deps
+      - name: Restore data cache
+        uses: actions/cache@v4
+        with:
+          path: data_cache
+          key: research-data-${{ inputs.action }}-${{ github.run_id }}
+          restore-keys: |
+            research-data-${{ inputs.action }}-
+            research-data-
+      - name: Run research
+        run: |
+          ARGS="${{ inputs.action }}"
+          [ -n "${{ inputs.only }}" ] && ARGS="$ARGS --only ${{ inputs.only }}"
+          [ "${{ inputs.no_null }}" = "true" ] && ARGS="$ARGS --no-null"
+          if [ "${{ inputs.action }}" = "test" ]; then ARGS="$ARGS --reason \"${{ inputs.reason }}\""; fi
+          eval python -m ictbot research $ARGS 2>&1 | tee research_console.log
+          exit ${PIPESTATUS[0]}
+      - name: Publish results to research-results branch
+        if: always()
+        run: |
+          set -e
+          mkdir -p /tmp/out && cp -r research_results /tmp/out/ 2>/dev/null || true
+          mkdir -p /tmp/out/research_results/logs && cp -r logs/* /tmp/out/research_results/logs/ 2>/dev/null || true
+          cp research_console.log /tmp/out/research_results/logs/console-${{ github.run_id }}.log 2>/dev/null || true
+          git config user.name "ictbot-research"
+          git config user.email "ictbot-research@users.noreply.github.com"
+          git fetch origin research-results || true
+          if git rev-parse --verify origin/research-results >/dev/null 2>&1; then
+            git checkout -B research-results origin/research-results
+          else
+            git checkout --orphan research-results && git rm -rf . >/dev/null 2>&1 || true
+          fi
+          mkdir -p research_results
+          cp -r /tmp/out/research_results/* research_results/ 2>/dev/null || true
+          printf '%s\n' "run ${{ github.run_id }} action=${{ inputs.action }} only=${{ inputs.only }} commit=${{ github.sha }}" >> research_results/RUNS.log
+          git add research_results
+          git commit -m "research ${{ inputs.action }} run ${{ github.run_id }} (from ${{ github.sha }})" || echo "nothing to commit"
+          for i in 1 2 3 4 5; do
+            git push origin research-results && break
+            sleep $((i * 5)); git pull --rebase origin research-results || true
+          done

@@ -284,6 +284,20 @@ def cmd_research(args: argparse.Namespace) -> int:
         res = runner.run_test(data, Path(args.frozen), out_root, args.reason)
         print(f"test access #{res['access_number']} written under {out_root / 'test'}")
         return 0
+    if args.action == "ict-baseline":
+        from .data import AlpacaMarketData
+        from .execution import AlpacaBroker
+        from .research.ict_baseline import run_ict_baseline
+        from .safety import load_paper_credentials
+
+        creds = load_paper_credentials()
+        broker = AlpacaBroker(creds.key_id, creds.secret_key)
+        src = AlpacaMarketData(creds.key_id, creds.secret_key, "sip")
+        start = dt.date.fromisoformat(args.start)
+        end = dt.date.fromisoformat(args.end) if args.end else now_ny().date() - dt.timedelta(days=1)
+        res = run_ict_baseline(cfg, broker, src, out_root / "ict_baseline", start, end, args.cache_dir + "/minute_sip")
+        print(f"ict baseline: {res['n_trades']} trades; validation sharpe {res['validation'].get('sharpe')}")
+        return 0
     raise ValueError(f"unknown research action {args.action}")
 
 
@@ -324,7 +338,7 @@ def build_parser() -> argparse.ArgumentParser:
     b.add_argument("--end")
     sub.add_parser("reset-killswitch")
     rs = sub.add_parser("research", help="research harness (historical data only, never trades)")
-    rs.add_argument("action", choices=["explore", "test"])
+    rs.add_argument("action", choices=["explore", "test", "ict-baseline"])
     rs.add_argument("--synthetic", action="store_true", help="offline smoke run on synthetic data (no conclusions!)")
     rs.add_argument("--only", default="", help="comma-separated strategy names")
     rs.add_argument("--no-null", action="store_true", help="skip the (slow) position-shift null test")
