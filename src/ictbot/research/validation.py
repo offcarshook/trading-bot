@@ -64,9 +64,11 @@ def cut(series: pd.Series, start: dt.date, end: dt.date) -> pd.Series:
 # --------------------------------------------------------------------------- #
 
 
-def deflated_sharpe(best_returns: pd.Series, trial_sharpes: list[float], n_trials: int | None = None) -> dict:
+def deflated_sharpe(best_returns: pd.Series, trial_sharpes: list[float], n_trials: int | None = None,
+                    periods: int = TRADING_DAYS) -> dict:
     """DSR = P(true SR > SR0) where SR0 is the expected max SR of ``n_trials``
-    skill-less strategies. All Sharpes here are PER-PERIOD (daily), not annualized."""
+    skill-less strategies. All Sharpes here are PER-PERIOD (daily), not annualized;
+    ``periods`` (observations per year: 252 stocks, ~365 crypto) only scales sr0_annualized."""
     r = best_returns.dropna()
     n_obs = len(r)
     n = n_trials or len(trial_sharpes)
@@ -84,7 +86,7 @@ def deflated_sharpe(best_returns: pd.Series, trial_sharpes: list[float], n_trial
     kurt = float(stats.kurtosis(r, fisher=False))
     denom = math.sqrt(max(1e-12, 1 - skew * sr + (kurt - 1) / 4 * sr * sr))
     dsr = float(stats.norm.cdf((sr - sr0) * math.sqrt(n_obs - 1) / denom))
-    return {"dsr": dsr, "sr0_daily": sr0, "sr_daily": float(sr), "n_trials": n, "sr0_annualized": sr0 * math.sqrt(TRADING_DAYS)}
+    return {"dsr": dsr, "sr0_daily": sr0, "sr_daily": float(sr), "n_trials": n, "sr0_annualized": sr0 * math.sqrt(periods)}
 
 
 def pbo_cscv(returns_matrix: pd.DataFrame, n_blocks: int = 16, max_combos: int = 4000, seed: int = 0) -> dict:
@@ -230,20 +232,34 @@ def bootstrap_summary(returns: pd.Series, n_sims: int = 1000, seed: int = 0, hor
 
 
 def position_shift_null(weights: pd.DataFrame, run_fn: Callable[[pd.DataFrame], pd.Series], actual_sharpe: float,
-                        n_shifts: int = 200, min_shift: int = 21, seed: int = 0) -> dict:
+                        n_shifts: int = 200, min_shift: int = 21, seed: int = 0, periods: int = TRADING_DAYS) -> dict:
     """Circularly shift the decision-weight history in time (keeps exposure, turnover
     and autocorrelation of positions, destroys timing). p = share of shifted
-    versions with Sharpe >= actual."""
+    versions with Sharpe >= actual.
+
+    All-NaN rows are HOLD rows (engine.run_weights: keep the drifted book, no trade). They
+    move with their decision rows, so every shifted run trades on as many rows as the
+    strategy did; a shift that puts a hold row first gets the decision in force there (the
+    last decision row circularly before it), so it does not start in cash. The caller must
+    seed row 0 the same way (the decision in force at the window start). ``periods`` only
+    annualizes the reported null Sharpes and must match ``actual_sharpe`` (p is scale-free)."""
     rng = np.random.default_rng(seed)
     n = len(weights)
     if n < 3 * min_shift:
         return {"p_value": None}
     vals = weights.to_numpy()
+    hold = np.isnan(vals.astype(float)).all(axis=1)
+    if hold.any():
+        last = np.maximum.accumulate(np.where(hold, -1, np.arange(n)))
+        in_force = np.where((last >= 0)[:, None], np.nan_to_num(vals[np.maximum(last, 0)].astype(float)), 0.0)
     null = []
     for _ in range(n_shifts):
         k = int(rng.integers(min_shift, n - min_shift))
-        shifted = pd.DataFrame(np.roll(vals, k, axis=0), index=weights.index, columns=weights.columns)
-        null.append(sharpe(run_fn(shifted)))
+        rolled = np.roll(vals, k, axis=0)
+        if hold[-k]:  # rolled row 0 = original row n-k
+            rolled[0] = in_force[-k]
+        shifted = pd.DataFrame(rolled, index=weights.index, columns=weights.columns)
+        null.append(sharpe(run_fn(shifted), periods))
     null = np.array(null)
     return {"p_value": float((null >= actual_sharpe).mean()), "null_sharpe_p50": float(np.median(null)), "null_sharpe_p95": float(np.percentile(null, 95)), "n": int(n_shifts)}
 
@@ -276,11 +292,11 @@ def regime_labels(spy_close: pd.Series) -> pd.Series:
     return lab.shift(1).fillna("warmup")
 
 
-def regime_breakdown(returns: pd.Series, labels: pd.Series) -> dict:
+def regime_breakdown(returns: pd.Series, labels: pd.Series, periods: int = TRADING_DAYS) -> dict:
     lab = labels.reindex(returns.index).fillna("warmup")
     out = {}
     for name, grp in returns.groupby(lab):
-        out[name] = {"days": int(len(grp)), "ann_return": float(grp.mean() * TRADING_DAYS), "sharpe": sharpe(grp)}
+        out[name] = {"days": int(len(grp)), "ann_return": float(grp.mean() * periods), "sharpe": sharpe(grp, periods)}
     yearly = (1 + returns).groupby(returns.index.year).prod() - 1
     out["by_year"] = {str(k): float(v) for k, v in yearly.items()}
     return out
@@ -291,29 +307,33 @@ def regime_breakdown(returns: pd.Series, labels: pd.Series) -> dict:
 # --------------------------------------------------------------------------- #
 
 
-def lever(returns: pd.Series, leverage: float, margin_rate: float = 0.07, base_exposure: pd.Series | None = None) -> pd.Series:
-    """Scale an unlevered strategy. Borrowing cost applies to exposure above 1x of equity."""
+def lever(returns: pd.Series, leverage: float, margin_rate: float = 0.07, base_exposure: pd.Series | None = None,
+          periods: int = TRADING_DAYS) -> pd.Series:
+    """Scale an unlevered strategy. Borrowing cost applies to exposure above 1x of equity
+    (``margin_rate`` per year spread over ``periods`` rows per year)."""
     expo = base_exposure.reindex(returns.index).fillna(0.0) if base_exposure is not None else pd.Series(1.0, returns.index)
     borrowed = np.maximum(0.0, leverage * expo - 1.0)
-    return leverage * returns - borrowed * margin_rate / TRADING_DAYS
+    return leverage * returns - borrowed * margin_rate / periods
 
 
 def leverage_analysis(returns: pd.Series, targets: tuple[float, ...] = (0.05, 0.08), margin_rate: float = 0.07,
-                      exposure: pd.Series | None = None, max_leverage: float = 20.0, n_boot: int = 500, seed: int = 0) -> dict:
+                      exposure: pd.Series | None = None, max_leverage: float = 20.0, n_boot: int = 500, seed: int = 0,
+                      periods: int = TRADING_DAYS) -> dict:
+    """``periods`` = rows per year (252 stocks, ~365 crypto): daily financing and the 1-year bootstrap horizon."""
     r = returns.dropna()
     if len(r) < 60:
         return {"note": "too short"}
     grid_l = np.round(np.arange(0.5, max_leverage + 1e-9, 0.25), 2)
     rows = []
     for L in grid_l:
-        rl = lever(r, L, margin_rate, exposure)
+        rl = lever(r, L, margin_rate, exposure, periods)
         m = monthly_returns(rl)
         geo = float((1 + m).prod() ** (1 / len(m)) - 1) if (1 + m).prod() > 0 else -1.0
         rows.append({"leverage": float(L), "monthly_geo": geo, "max_dd": max_drawdown(rl), "ruined": bool((1 + rl).cumprod().min() < 0.05)})
     table = pd.DataFrame(rows)
     mu, var = r.mean(), r.var(ddof=1)
     avg_expo = float(exposure.reindex(r.index).fillna(0).mean()) if exposure is not None else 1.0
-    mu_fin = mu - avg_expo * margin_rate / TRADING_DAYS  # each extra 1x of exposure is financed
+    mu_fin = mu - avg_expo * margin_rate / periods  # each extra 1x of exposure is financed
     kelly = float(mu_fin / var) if var > 0 else 0.0
     best_geo = table.loc[table["monthly_geo"].idxmax()]
     out = {"kelly_leverage": kelly, "growth_optimal_leverage_hist": float(best_geo["leverage"]), "max_monthly_geo_any_leverage": float(best_geo["monthly_geo"]), "targets": {}}
@@ -323,8 +343,8 @@ def leverage_analysis(returns: pd.Series, targets: tuple[float, ...] = (0.05, 0.
             out["targets"][f"{tgt:.0%}"] = {"reachable_historically": False, "note": "no leverage up to %.0fx reaches this in-sample (volatility drag dominates)" % max_leverage}
             continue
         L = float(hit["leverage"].iloc[0])
-        rl = lever(r, L, margin_rate, exposure)
-        boot = bootstrap_summary(rl, n_sims=n_boot, seed=seed)
+        rl = lever(r, L, margin_rate, exposure, periods)
+        boot = bootstrap_summary(rl, n_sims=n_boot, seed=seed, horizon_days=periods)
         out["targets"][f"{tgt:.0%}"] = {"reachable_historically": True, "leverage_needed": L, "hist_max_dd": float(hit["max_dd"].iloc[0]),
                                         "vs_kelly": L / kelly if kelly > 0 else None, "bootstrap_1y": boot,
                                         "max_gross_exposure_needed": float(L * (exposure.max() if exposure is not None else 1.0)),
