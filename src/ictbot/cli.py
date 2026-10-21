@@ -204,6 +204,16 @@ def build_parser() -> argparse.ArgumentParser:
 COMMANDS = {"check": cmd_check, "run": cmd_run, "flatten": cmd_flatten, "report": cmd_report, "backtest": cmd_backtest, "reset-killswitch": cmd_reset_killswitch}
 
 
+def _gh_annotation(title: str, message: str) -> None:
+    """Surface a failure reason on the GitHub Actions run page (secrets redacted)."""
+    import os
+
+    from .logging_setup import redact
+
+    if os.environ.get("GITHUB_ACTIONS") == "true":
+        print(f"::error title={title}::{redact(message)}", flush=True)
+
+
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     try:
@@ -216,9 +226,11 @@ def main(argv: list[str] | None = None) -> int:
         return COMMANDS[args.cmd](args)
     except LiveTradingRefused as exc:
         log.critical(f"REFUSED: {exc}")
+        _gh_annotation("ictbot refused to start", str(exc))
         return 4
     except (ConfigError, ValueError) as exc:
         log.critical(f"configuration error: {exc}")
+        _gh_annotation("ictbot configuration error", str(exc))
         return 3
     except KeyboardInterrupt:
         log.warning("interrupted")
