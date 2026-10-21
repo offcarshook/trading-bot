@@ -61,6 +61,17 @@ jobs:
           if [ "${{ inputs.action }}" = "test" ]; then ARGS="$ARGS --reason \"${{ inputs.reason }}\""; fi
           eval python -m ictbot research $ARGS 2>&1 | tee research_console.log
           exit ${PIPESTATUS[0]}
+      - name: Backup results as artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: research-${{ inputs.action }}-${{ github.run_id }}
+          path: |
+            research_results/
+            research_console.log
+            logs/
+          if-no-files-found: ignore
+          retention-days: 30
       - name: Publish results to research-results branch
         if: always()
         run: |
@@ -70,6 +81,8 @@ jobs:
           cp research_console.log /tmp/out/research_results/logs/console-${{ github.run_id }}.log 2>/dev/null || true
           git config user.name "ictbot-research"
           git config user.email "ictbot-research@users.noreply.github.com"
+          rm -rf research_results research_console.log   # copied to /tmp/out; avoid "untracked files would be overwritten"
+          git stash -u >/dev/null 2>&1 || true
           git fetch origin research-results || true
           if git rev-parse --verify origin/research-results >/dev/null 2>&1; then
             git checkout -B research-results origin/research-results
