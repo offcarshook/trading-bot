@@ -1,0 +1,8 @@
+{"ts": "2026-10-21T16:26:30.670408+00:00", "level": "INFO", "logger": "ictbot.research.runner", "msg": "exploring", "data": {"strategy": "leveraged_trend", "trials": 72}}
+{"ts": "2026-10-21T16:26:40.222829+00:00", "level": "INFO", "logger": "ictbot.research.runner", "msg": "explored", "data": {"strategy": "leveraged_trend", "survives": false, "val_sharpe": 0.45292597899431225, "wf_sharpe": 0.9703150684748288, "seconds": 9.6}}
+{"ts": "2026-10-21T16:26:40.223135+00:00", "level": "INFO", "logger": "ictbot.research.runner", "msg": "exploring", "data": {"strategy": "meanrev_regime", "trials": 48}}
+{"ts": "2026-10-21T16:26:48.634747+00:00", "level": "INFO", "logger": "ictbot.research.runner", "msg": "explored", "data": {"strategy": "meanrev_regime", "survives": false, "val_sharpe": 0.31766880066590664, "wf_sharpe": 1.5204435364857158, "seconds": 8.4}}
+{"ts": "2026-10-21T16:26:48.635013+00:00", "level": "INFO", "logger": "ictbot.research.runner", "msg": "exploring", "data": {"strategy": "regime_allocation", "trials": 36}}
+{"ts": "2026-10-21T16:26:56.073781+00:00", "level": "INFO", "logger": "ictbot.research.runner", "msg": "explored", "data": {"strategy": "regime_allocation", "survives": false, "val_sharpe": -0.09879759498654778, "wf_sharpe": 0.8546980918223832, "seconds": 7.4}}
+{"ts": "2026-10-21T16:26:56.074143+00:00", "level": "INFO", "logger": "ictbot.research.runner", "msg": "exploring", "data": {"strategy": "xsmom_sector_rotation", "trials": 72}}
+{"ts": "2026-10-21T16:27:05.861167+00:00", "level": "INFO", "logger": "ictbot.research.runner", "msg": "explored", "data": {"strategy": "xsmom_sector_rotation", "survives": false, "val_sharpe": 0.6123668148638092, "wf_sharpe": 0.7310294379263214, "seconds": 9.8}}

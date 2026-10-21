@@ -1,0 +1,9 @@
+16:26:30 INFO    ictbot.research.runner: exploring {"strategy": "leveraged_trend", "trials": 72}
+16:26:40 INFO    ictbot.research.runner: explored {"strategy": "leveraged_trend", "survives": false, "val_sharpe": 0.45292597899431225, "wf_sharpe": 0.9703150684748288, "seconds": 9.6}
+16:26:40 INFO    ictbot.research.runner: exploring {"strategy": "meanrev_regime", "trials": 48}
+16:26:48 INFO    ictbot.research.runner: explored {"strategy": "meanrev_regime", "survives": false, "val_sharpe": 0.31766880066590664, "wf_sharpe": 1.5204435364857158, "seconds": 8.4}
+16:26:48 INFO    ictbot.research.runner: exploring {"strategy": "regime_allocation", "trials": 36}
+16:26:56 INFO    ictbot.research.runner: explored {"strategy": "regime_allocation", "survives": false, "val_sharpe": -0.09879759498654778, "wf_sharpe": 0.8546980918223832, "seconds": 7.4}
+16:26:56 INFO    ictbot.research.runner: exploring {"strategy": "xsmom_sector_rotation", "trials": 72}
+16:27:05 INFO    ictbot.research.runner: explored {"strategy": "xsmom_sector_rotation", "survives": false, "val_sharpe": 0.6123668148638092, "wf_sharpe": 0.7310294379263214, "seconds": 9.8}
+explore report: research_results/explore/REPORT.md
