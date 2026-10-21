@@ -39,6 +39,7 @@ from .timeutils import NY, TradingSession, next_bar_boundary, now_ny, ny_dt
 
 log = logging.getLogger(__name__)
 MAX_CONSECUTIVE_CYCLE_ERRORS = 5
+MANUAL_MAX_WAIT_MINUTES = 30  # manual runs started earlier than this before the open just exit
 STATE_DIR = "state"
 
 
@@ -375,6 +376,11 @@ class LiveBot:
         rec.event("start", trading_allowed=ctx.trading_allowed, skip_reason=ctx.skip_reason, alerts=self.notify.channels)
 
         if now < ctx.session.open:
+            if not respect_start_window and ctx.session.open - now > dt.timedelta(minutes=MANUAL_MAX_WAIT_MINUTES):
+                log.info("manual run long before the open: connection + paper checks passed, exiting instead of waiting",
+                         extra={"open": ctx.session.open.isoformat()})
+                rec.event("manual_check_ok", open=ctx.session.open)
+                return 0
             self._sleep_until(ctx.session.open + dt.timedelta(seconds=5))
         self.reconcile(ctx, self.clock(), rec)
         self.load_history(ctx)

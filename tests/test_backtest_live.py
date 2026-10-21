@@ -229,3 +229,15 @@ def test_dry_run_logs_taken_once_and_sends_nothing(cfg: BotConfig, tmp_path, mon
     assert broker.submits == 0
     sig = pd.read_csv(rec.day_dir / "signals.csv")
     assert (sig["decision"] == "taken").sum() == 1
+
+
+def test_manual_run_long_before_open_exits_without_waiting(cfg: BotConfig, tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    broker = FakeBroker()
+    broker.sessions_list = [session(DAY0), session(DAY1)]
+    t = [ny_dt(DAY1, dt.time(4, 45))]
+    slept = []
+    cfg = dataclasses.replace(cfg, reporting=dataclasses.replace(cfg.reporting, reports_dir=str(tmp_path / "r")))
+    bot = LiveBot(cfg, broker, None, Notifier(cfg.alerts), clock=lambda: t[0], sleep=slept.append, state_dir=str(tmp_path / "s"))
+    assert bot.run(respect_start_window=False) == 0
+    assert slept == []
