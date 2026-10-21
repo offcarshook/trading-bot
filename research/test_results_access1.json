@@ -1,0 +1,656 @@
+{
+ "stage": "test",
+ "splits": {
+  "train": [
+   "2016-01-01",
+   "2021-12-31"
+  ],
+  "validation": [
+   "2022-01-01",
+   "2023-12-31"
+  ],
+  "test": [
+   "2024-01-01",
+   "2026-10-20"
+  ]
+ },
+ "access_number": 1,
+ "candidates": [
+  {
+   "strategy": "leveraged_trend",
+   "params": {
+    "lev": "QLD",
+    "sma": 150,
+    "filter": "band2",
+    "defensive": "IEF"
+   },
+   "test": {
+    "days": 703,
+    "start": "2024-01-02",
+    "end": "2026-10-20",
+    "total_return": 0.7280440895339357,
+    "cagr": 0.2166195354925331,
+    "monthly_geo_mean": 0.016218054411871075,
+    "monthly_arith_mean": 0.0192823248001845,
+    "pct_positive_months": 0.5882352941176471,
+    "best_month": 0.2150179078671115,
+    "worst_month": -0.13511837072262978,
+    "ann_vol": 0.3394806200903383,
+    "sharpe": 0.7481308023315195,
+    "sortino": 1.0486791592478362,
+    "max_drawdown": 0.30738496981576924,
+    "calmar": 0.7047173959818651,
+    "psr_0": 0.8920123121108009,
+    "t_stat_mean": 1.2495537096478,
+    "skew": -0.3513854018540347,
+    "excess_kurtosis": 1.4090138145802547,
+    "hit_rate_days": 0.5534950071326676,
+    "avg_gross_exposure": 1.0,
+    "time_in_market": 1.0,
+    "annual_turnover": 4.301564722617354,
+    "annual_cost_drag": 0.0012427220483641538,
+    "n_trades": 39
+   },
+   "test_cost_stress_2x": {
+    "days": 703,
+    "start": "2024-01-02",
+    "end": "2026-10-20",
+    "total_return": 0.7220584998283837,
+    "cagr": 0.21510724470011677,
+    "monthly_geo_mean": 0.016114351441699926,
+    "monthly_arith_mean": 0.019184163248564513,
+    "pct_positive_months": 0.5882352941176471,
+    "best_month": 0.2150179078671115,
+    "worst_month": -0.13511837072262978,
+    "ann_vol": 0.3394834584381759,
+    "sharpe": 0.7444604804574344,
+    "sortino": 1.0434336427815856,
+    "max_drawdown": 0.3081855869760679,
+    "calmar": 0.697979573966322,
+    "psr_0": 0.8908954463305936,
+    "t_stat_mean": 1.243423412246501,
+    "skew": -0.3509290370530069,
+    "excess_kurtosis": 1.4084195538126636,
+    "hit_rate_days": 0.5534950071326676
+   },
+   "leverage_on_test": {
+    "kelly_leverage": 1.596360536498322,
+    "growth_optimal_leverage_hist": 1.5,
+    "max_monthly_geo_any_leverage": 0.01782580669511602,
+    "targets": {
+     "5%": {
+      "reachable_historically": false,
+      "note": "no leverage up to 20x reaches this in-sample (volatility drag dominates)"
+     },
+     "8%": {
+      "reachable_historically": false,
+      "note": "no leverage up to 20x reaches this in-sample (volatility drag dominates)"
+     }
+    },
+    "table": [
+     {
+      "leverage": 1.0,
+      "monthly_geo": 0.016218054411871075,
+      "max_dd": 0.30738496981576924,
+      "ruined": false
+     },
+     {
+      "leverage": 2.0,
+      "monthly_geo": 0.016957914014644082,
+      "max_dd": 0.5449615475677688,
+      "ruined": false
+     },
+     {
+      "leverage": 3.0,
+      "monthly_geo": 0.007667118935034578,
+      "max_dd": 0.7317152392108892,
+      "ruined": false
+     },
+     {
+      "leverage": 4.0,
+      "monthly_geo": -0.011818341307510694,
+      "max_dd": 0.8665858419176877,
+      "ruined": false
+     },
+     {
+      "leverage": 5.0,
+      "monthly_geo": -0.04152254311144621,
+      "max_dd": 0.9524609437940392,
+      "ruined": false
+     },
+     {
+      "leverage": 8.0,
+      "monthly_geo": -0.19101213849597953,
+      "max_dd": 0.9998538063730571,
+      "ruined": true
+     },
+     {
+      "leverage": 10.0,
+      "monthly_geo": -0.34989100750219015,
+      "max_dd": 0.9999998899420302,
+      "ruined": true
+     },
+     {
+      "leverage": 15.0,
+      "monthly_geo": -0.711028543819188,
+      "max_dd": 1.0014238694350506,
+      "ruined": true
+     },
+     {
+      "leverage": 20.0,
+      "monthly_geo": -0.8670869643017698,
+      "max_dd": 1.0003362473310966,
+      "ruined": true
+     }
+    ]
+   },
+   "bootstrap_1y": {
+    "horizon_days": 252,
+    "annual_return_p05": -0.23738015233755347,
+    "annual_return_p50": 0.20997877472801485,
+    "annual_return_p95": 0.8551652665690728,
+    "prob_loss_year": 0.246,
+    "max_dd_p50": 0.24225278912964004,
+    "max_dd_p95": 0.4152843732546638,
+    "prob_dd_over_30": 0.271,
+    "prob_dd_over_50": 0.011
+   }
+  },
+  {
+   "strategy": "meanrev_regime",
+   "params": {
+    "signal": "ibs",
+    "threshold": "strict",
+    "exit_rule": "rsi2",
+    "max_hold": 5,
+    "vol_filter": true,
+    "allow_short": false,
+    "gross": 1.0,
+    "band": 0.02
+   },
+   "test": {
+    "days": 703,
+    "start": "2024-01-02",
+    "end": "2026-10-20",
+    "total_return": 0.1286245596689386,
+    "cagr": 0.04432839952811651,
+    "monthly_geo_mean": 0.0035651544367460986,
+    "monthly_arith_mean": 0.0036053238328258835,
+    "pct_positive_months": 0.6176470588235294,
+    "best_month": 0.03475862559725895,
+    "worst_month": -0.013772932575499719,
+    "ann_vol": 0.04188889492761457,
+    "sharpe": 1.0564260581668978,
+    "sortino": 1.6576440565011035,
+    "max_drawdown": 0.03148508526293359,
+    "calmar": 1.407917404635488,
+    "psr_0": 0.963461798656398,
+    "t_stat_mean": 1.7644790133451698,
+    "skew": 0.7829883230341521,
+    "excess_kurtosis": 15.943418618189106,
+    "hit_rate_days": 0.5656565656565656,
+    "avg_gross_exposure": 0.15050055221748923,
+    "time_in_market": 0.3357041251778094,
+    "annual_turnover": 25.276740794452635,
+    "annual_cost_drag": 0.004806632609674021,
+    "n_trades": 952
+   },
+   "test_cost_stress_2x": {
+    "days": 703,
+    "start": "2024-01-02",
+    "end": "2026-10-20",
+    "total_return": 0.11358994004387335,
+    "cagr": 0.03932009609365017,
+    "monthly_geo_mean": 0.003169393612388438,
+    "monthly_arith_mean": 0.0032093398317222634,
+    "pct_positive_months": 0.5882352941176471,
+    "best_month": 0.03447624854701736,
+    "worst_month": -0.014305769598318974,
+    "ann_vol": 0.0418201356890884,
+    "sharpe": 0.9431270430566319,
+    "sortino": 1.4665113055460182,
+    "max_drawdown": 0.03180221120752502,
+    "calmar": 1.236395036718273,
+    "psr_0": 0.9448393325587747,
+    "t_stat_mean": 1.5752431147706585,
+    "skew": 0.7392576203873034,
+    "excess_kurtosis": 15.880664940536036,
+    "hit_rate_days": 0.5488215488215489
+   },
+   "leverage_on_test": {
+    "kelly_leverage": 19.215749168612366,
+    "growth_optimal_leverage_hist": 19.25,
+    "max_monthly_geo_any_leverage": 0.02925202572540564,
+    "targets": {
+     "5%": {
+      "reachable_historically": false,
+      "note": "no leverage up to 20x reaches this in-sample (volatility drag dominates)"
+     },
+     "8%": {
+      "reachable_historically": false,
+      "note": "no leverage up to 20x reaches this in-sample (volatility drag dominates)"
+     }
+    },
+    "table": [
+     {
+      "leverage": 1.0,
+      "monthly_geo": 0.0035651463079644508,
+      "max_dd": 0.03148508526293359,
+      "ruined": false
+     },
+     {
+      "leverage": 2.0,
+      "monthly_geo": 0.006700462168767407,
+      "max_dd": 0.06253500583535221,
+      "ruined": false
+     },
+     {
+      "leverage": 3.0,
+      "monthly_geo": 0.009379275049052449,
+      "max_dd": 0.09326849170397333,
+      "ruined": false
+     },
+     {
+      "leverage": 4.0,
+      "monthly_geo": 0.011920736843477941,
+      "max_dd": 0.12329093708700023,
+      "ruined": false
+     },
+     {
+      "leverage": 5.0,
+      "monthly_geo": 0.01408048159801134,
+      "max_dd": 0.15330731297213496,
+      "ruined": false
+     },
+     {
+      "leverage": 8.0,
+      "monthly_geo": 0.01971039956720544,
+      "max_dd": 0.24189512110356992,
+      "ruined": false
+     },
+     {
+      "leverage": 10.0,
+      "monthly_geo": 0.022758098315981856,
+      "max_dd": 0.29778449303175025,
+      "ruined": false
+     },
+     {
+      "leverage": 15.0,
+      "monthly_geo": 0.027849752243530146,
+      "max_dd": 0.4262950633857133,
+      "ruined": false
+     },
+     {
+      "leverage": 20.0,
+      "monthly_geo": 0.02921200215669617,
+      "max_dd": 0.5388410237634205,
+      "ruined": false
+     }
+    ]
+   },
+   "bootstrap_1y": {
+    "horizon_days": 252,
+    "annual_return_p05": -0.01230422724334287,
+    "annual_return_p50": 0.043112216143909254,
+    "annual_return_p95": 0.10675737286876946,
+    "prob_loss_year": 0.109,
+    "max_dd_p50": 0.030371116253149477,
+    "max_dd_p95": 0.050368035224075465,
+    "prob_dd_over_30": 0.0,
+    "prob_dd_over_50": 0.0
+   }
+  },
+  {
+   "strategy": "regime_allocation",
+   "params": {
+    "trend_sma": 100,
+    "bond_sma": 50,
+    "vol_filter": true,
+    "alloc_map": "defensive",
+    "min_hold": 5,
+    "band": 0.05
+   },
+   "test": {
+    "days": 703,
+    "start": "2024-01-02",
+    "end": "2026-10-20",
+    "total_return": 0.21200963275015883,
+    "cagr": 0.0713562255773843,
+    "monthly_geo_mean": 0.005671310613259095,
+    "monthly_arith_mean": 0.005856793529394196,
+    "pct_positive_months": 0.6470588235294118,
+    "best_month": 0.037031065505772176,
+    "worst_month": -0.041119509489432104,
+    "ann_vol": 0.07477232893056227,
+    "sharpe": 0.9593145425828884,
+    "sortino": 1.3476391394269274,
+    "max_drawdown": 0.0686262614575136,
+    "calmar": 1.0397801666867839,
+    "psr_0": 0.9422264936926087,
+    "t_stat_mean": 1.6022800313364767,
+    "skew": -0.5252939992147533,
+    "excess_kurtosis": 1.6992993627106419,
+    "hit_rate_days": 0.5320056899004267,
+    "avg_gross_exposure": 1.0,
+    "time_in_market": 1.0,
+    "annual_turnover": 10.399992918789103,
+    "annual_cost_drag": 0.002043221456597032,
+    "n_trades": 416
+   },
+   "test_cost_stress_2x": {
+    "days": 703,
+    "start": "2024-01-02",
+    "end": "2026-10-20",
+    "total_return": 0.20511900170550512,
+    "cagr": 0.06916883774681515,
+    "monthly_geo_mean": 0.005502682051482299,
+    "monthly_arith_mean": 0.005689709724032092,
+    "pct_positive_months": 0.6470588235294118,
+    "best_month": 0.037031065505772176,
+    "worst_month": -0.041508955345057386,
+    "ann_vol": 0.07477750320617008,
+    "sharpe": 0.9319144958811639,
+    "sortino": 1.3077892754785136,
+    "max_drawdown": 0.06947142644988125,
+    "calmar": 0.9956444149986701,
+    "psr_0": 0.9369523319286572,
+    "t_stat_mean": 1.5565155341469987,
+    "skew": -0.5235341611848484,
+    "excess_kurtosis": 1.6954557263331003,
+    "hit_rate_days": 0.5305832147937412
+   },
+   "leverage_on_test": {
+    "kelly_leverage": 0.30946397944189313,
+    "growth_optimal_leverage_hist": 1.0,
+    "max_monthly_geo_any_leverage": 0.005671310613259095,
+    "targets": {
+     "5%": {
+      "reachable_historically": false,
+      "note": "no leverage up to 20x reaches this in-sample (volatility drag dominates)"
+     },
+     "8%": {
+      "reachable_historically": false,
+      "note": "no leverage up to 20x reaches this in-sample (volatility drag dominates)"
+     }
+    },
+    "table": [
+     {
+      "leverage": 1.0,
+      "monthly_geo": 0.005671310613259095,
+      "max_dd": 0.0686262614575136,
+      "ruined": false
+     },
+     {
+      "leverage": 2.0,
+      "monthly_geo": 0.005120739871568913,
+      "max_dd": 0.15934216979326776,
+      "ruined": false
+     },
+     {
+      "leverage": 3.0,
+      "monthly_geo": 0.00410553594648988,
+      "max_dd": 0.24413745425168154,
+      "ruined": false
+     },
+     {
+      "leverage": 4.0,
+      "monthly_geo": 0.0026241005608418355,
+      "max_dd": 0.3263121508058817,
+      "ruined": false
+     },
+     {
+      "leverage": 5.0,
+      "monthly_geo": 0.0006751732977199332,
+      "max_dd": 0.41099894651987834,
+      "ruined": false
+     },
+     {
+      "leverage": 8.0,
+      "monthly_geo": -0.007984188518957325,
+      "max_dd": 0.6435782740607319,
+      "ruined": false
+     },
+     {
+      "leverage": 10.0,
+      "monthly_geo": -0.016102915178121013,
+      "max_dd": 0.7572903644434831,
+      "ruined": false
+     },
+     {
+      "leverage": 15.0,
+      "monthly_geo": -0.044574024283832725,
+      "max_dd": 0.9225621722250139,
+      "ruined": false
+     },
+     {
+      "leverage": 20.0,
+      "monthly_geo": -0.08456929653317813,
+      "max_dd": 0.9813353365952314,
+      "ruined": true
+     }
+    ]
+   },
+   "bootstrap_1y": {
+    "horizon_days": 252,
+    "annual_return_p05": -0.034063376041657885,
+    "annual_return_p50": 0.07393676095743407,
+    "annual_return_p95": 0.17984533660822902,
+    "prob_loss_year": 0.131,
+    "max_dd_p50": 0.05364648726410165,
+    "max_dd_p95": 0.09738778988289967,
+    "prob_dd_over_30": 0.0,
+    "prob_dd_over_50": 0.0
+   }
+  },
+  {
+   "strategy": "xsmom_sector_rotation",
+   "params": {
+    "lookback": "blend_1_3_6_12",
+    "top_n": 4,
+    "rebalance": "W",
+    "abs_filter": false,
+    "market_filter": true,
+    "band": 0.01
+   },
+   "test": {
+    "days": 703,
+    "start": "2024-01-02",
+    "end": "2026-10-20",
+    "total_return": 0.4085960885701654,
+    "cagr": 0.13066657966848183,
+    "monthly_geo_mean": 0.010127216842791942,
+    "monthly_arith_mean": 0.010597277995264076,
+    "pct_positive_months": 0.6470588235294118,
+    "best_month": 0.08132152925851566,
+    "worst_month": -0.053020406924781716,
+    "ann_vol": 0.11590214032106001,
+    "sharpe": 1.117736633885047,
+    "sortino": 1.621238160123345,
+    "max_drawdown": 0.0879737915835932,
+    "calmar": 1.4852898495834603,
+    "psr_0": 0.9677013226629197,
+    "t_stat_mean": 1.8668820384451934,
+    "skew": -0.19167609360012602,
+    "excess_kurtosis": 2.480901513966012,
+    "hit_rate_days": 0.5514285714285714,
+    "avg_gross_exposure": 1.0016075288807098,
+    "time_in_market": 1.0,
+    "annual_turnover": 15.09020419046534,
+    "annual_cost_drag": 0.004141627270736101,
+    "n_trades": 589
+   },
+   "test_cost_stress_2x": {
+    "days": 703,
+    "start": "2024-01-02",
+    "end": "2026-10-20",
+    "total_return": 0.3933394263805696,
+    "cagr": 0.1262613552020566,
+    "monthly_geo_mean": 0.009803725034578381,
+    "monthly_arith_mean": 0.010275729855190163,
+    "pct_positive_months": 0.6176470588235294,
+    "best_month": 0.08104105023619734,
+    "worst_month": -0.053931298802079364,
+    "ann_vol": 0.11591827455987823,
+    "sharpe": 1.0839044510573206,
+    "sortino": 1.5704395907521305,
+    "max_drawdown": 0.08909555166273797,
+    "calmar": 1.417145444926431,
+    "psr_0": 0.9635077778943916,
+    "t_stat_mean": 1.8103743670244747,
+    "skew": -0.18878626357510955,
+    "excess_kurtosis": 2.474817678867124,
+    "hit_rate_days": 0.55
+   },
+   "leverage_on_test": {
+    "kelly_leverage": 4.424490931812624,
+    "growth_optimal_leverage_hist": 4.5,
+    "max_monthly_geo_any_leverage": 0.016612850389630562,
+    "targets": {
+     "5%": {
+      "reachable_historically": false,
+      "note": "no leverage up to 20x reaches this in-sample (volatility drag dominates)"
+     },
+     "8%": {
+      "reachable_historically": false,
+      "note": "no leverage up to 20x reaches this in-sample (volatility drag dominates)"
+     }
+    },
+    "table": [
+     {
+      "leverage": 1.0,
+      "monthly_geo": 0.01010740020178491,
+      "max_dd": 0.08802327800026799,
+      "ruined": false
+     },
+     {
+      "leverage": 2.0,
+      "monthly_geo": 0.013376338419190281,
+      "max_dd": 0.18642802951281734,
+      "ruined": false
+     },
+     {
+      "leverage": 3.0,
+      "monthly_geo": 0.015519270016088438,
+      "max_dd": 0.28420909859588994,
+      "ruined": false
+     },
+     {
+      "leverage": 4.0,
+      "monthly_geo": 0.01653311887022957,
+      "max_dd": 0.376570715134925,
+      "ruined": false
+     },
+     {
+      "leverage": 5.0,
+      "monthly_geo": 0.01640597712015479,
+      "max_dd": 0.4611757249041569,
+      "ruined": false
+     },
+     {
+      "leverage": 8.0,
+      "monthly_geo": 0.009084665459601071,
+      "max_dd": 0.6685072014570864,
+      "ruined": false
+     },
+     {
+      "leverage": 10.0,
+      "monthly_geo": -0.0016448595294835666,
+      "max_dd": 0.7702653386163335,
+      "ruined": false
+     },
+     {
+      "leverage": 15.0,
+      "monthly_geo": -0.04909510201448586,
+      "max_dd": 0.9590383780611998,
+      "ruined": false
+     },
+     {
+      "leverage": 20.0,
+      "monthly_geo": -0.12607420582100493,
+      "max_dd": 0.9980423999282638,
+      "ruined": true
+     }
+    ]
+   },
+   "bootstrap_1y": {
+    "horizon_days": 252,
+    "annual_return_p05": -0.032183314152105215,
+    "annual_return_p50": 0.1338529462856496,
+    "annual_return_p95": 0.2916329772565186,
+    "prob_loss_year": 0.091,
+    "max_dd_p50": 0.07466357874720653,
+    "max_dd_p95": 0.13150115481658234,
+    "prob_dd_over_30": 0.0,
+    "prob_dd_over_50": 0.0
+   }
+  }
+ ],
+ "benchmarks": {
+  "buy_hold_SPY": {
+   "days": 703,
+   "start": "2024-01-02",
+   "end": "2026-10-20",
+   "total_return": 0.6707801942338216,
+   "cagr": 0.2020111317834885,
+   "monthly_geo_mean": 0.01521131737221415,
+   "monthly_arith_mean": 0.01575248394773262,
+   "pct_positive_months": 0.7058823529411765,
+   "best_month": 0.104875108198343,
+   "worst_month": -0.05595605904565648,
+   "ann_vol": 0.15050661019832803,
+   "sharpe": 1.297836734543771,
+   "sortino": 1.9213149231542692,
+   "max_drawdown": 0.18708614780554256,
+   "calmar": 1.0797759970634437,
+   "psr_0": 0.9855076423163521,
+   "t_stat_mean": 2.1676913998358858,
+   "skew": 0.570509963651123,
+   "excess_kurtosis": 16.334915947913924,
+   "hit_rate_days": 0.5598290598290598
+  },
+  "buy_hold_QQQ": {
+   "days": 703,
+   "start": "2024-01-02",
+   "end": "2026-10-20",
+   "total_return": 0.7777062015311846,
+   "cagr": 0.22903922107172958,
+   "monthly_geo_mean": 0.01706526663927166,
+   "monthly_arith_mean": 0.018187187165421406,
+   "pct_positive_months": 0.6470588235294118,
+   "best_month": 0.15672587730721932,
+   "worst_month": -0.07594158034686671,
+   "ann_vol": 0.2068949187979341,
+   "sharpe": 1.1000481574142424,
+   "sortino": 1.6221641998495415,
+   "max_drawdown": 0.22739761873609843,
+   "calmar": 1.0072190832285552,
+   "psr_0": 0.9683066625696714,
+   "t_stat_mean": 1.8373381387377765,
+   "skew": 0.5252895227218032,
+   "excess_kurtosis": 10.080955600979992,
+   "hit_rate_days": 0.5675675675675675
+  },
+  "60_40_SPY_IEF": {
+   "days": 703,
+   "start": "2024-01-02",
+   "end": "2026-10-20",
+   "total_return": 0.38896043460355556,
+   "cagr": 0.12499124924737037,
+   "monthly_geo_mean": 0.009710240773912027,
+   "monthly_arith_mean": 0.00996266487557386,
+   "pct_positive_months": 0.7058823529411765,
+   "best_month": 0.06261964780580875,
+   "worst_month": -0.03925108649072406,
+   "ann_vol": 0.09423285911307884,
+   "sharpe": 1.297097420991883,
+   "sortino": 1.9235013995830026,
+   "max_drawdown": 0.10565552598749173,
+   "calmar": 1.1830072121563027,
+   "psr_0": 0.9851006493656062,
+   "t_stat_mean": 2.1664565730001573,
+   "skew": 0.3442533352590318,
+   "excess_kurtosis": 10.536354423511446,
+   "hit_rate_days": 0.5519203413940256
+  }
+ }
+}
