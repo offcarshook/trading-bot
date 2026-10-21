@@ -13,6 +13,7 @@ from __future__ import annotations
 import argparse
 import dataclasses
 import datetime as dt
+import json
 import logging
 import re
 import sys
@@ -301,6 +302,54 @@ def cmd_research(args: argparse.Namespace) -> int:
     raise ValueError(f"unknown research action {args.action}")
 
 
+def cmd_rebalance(args: argparse.Namespace) -> int:
+    """Daily multi-strategy PAPER portfolio rebalance (config/daily_portfolio.yaml)."""
+    import os
+
+    from .daily_portfolio import load_portfolio_config, required_symbols, run_rebalance
+    from .data import AlpacaMarketData
+    from .execution import AlpacaBroker
+    from .research.data import AlpacaHistory, load_research_data
+    from .safety import load_paper_credentials
+
+    pcfg = load_portfolio_config(args.portfolio_config)
+    now = now_ny()
+    creds = load_paper_credentials()
+    broker = AlpacaBroker(creds.key_id, creds.secret_key)
+    if not args.ignore_window:
+        if not broker.clock().is_open:
+            log.info("market closed - nothing to do")
+            return 0
+        if not (parse_hhmm(pcfg.window_start) <= now.time() <= parse_hhmm(pcfg.window_end)):
+            log.info("outside the daily rebalance window - exiting (expected for the off-DST cron trigger)", extra={"ny": now.isoformat()})
+            return 0
+    end = now.date() - dt.timedelta(days=1)
+    start = now.date() - dt.timedelta(days=pcfg.history_calendar_days)
+    sessions = [x for x in broker.sessions(start, end) if x.day <= end]
+    syms = required_symbols(pcfg)
+    hist = AlpacaHistory(creds.key_id, creds.secret_key, cache_dir="data_cache/daily_portfolio", feed="sip")
+    data = load_research_data(hist, sessions, syms, [], start, end)
+    md = AlpacaMarketData(creds.key_id, creds.secret_key, "iex")
+    prices = {}
+    for sym in syms:
+        try:
+            prices[sym] = md.latest_trade_price(sym) or float(data.daily[sym]["close"].iloc[-1])
+        except Exception:  # noqa: BLE001
+            prices[sym] = float(data.daily[sym]["close"].iloc[-1]) if sym in data.daily else 0.0
+    rep = run_rebalance(pcfg, broker, data, prices, now, dry_run=args.dry_run, force=args.force, out_dir=Path(cfg_reports_dir(args)))
+    msg = (f"daily portfolio ({pcfg.profile}) decision {rep.get('decision_date')} equity {rep['equity']:.0f} dd {rep['drawdown']:.1%} "
+           f"targets {json.dumps({k: round(v, 3) for k, v in rep.get('targets', {}).items()})} orders {len(rep.get('sent', []))}"
+           f"{' DRY RUN' if args.dry_run else ''} {rep.get('skipped', '')}")
+    log.info(msg)
+    if os.environ.get("GITHUB_ACTIONS") == "true":
+        print(f"::notice title=daily portfolio::{msg}", flush=True)
+    return 0
+
+
+def cfg_reports_dir(args: argparse.Namespace) -> str:
+    return load_config(args.config).reporting.reports_dir
+
+
 def cmd_reset_killswitch(args: argparse.Namespace) -> int:
     path = Path(args.config)
     today = now_ny().date().isoformat()
@@ -337,6 +386,11 @@ def build_parser() -> argparse.ArgumentParser:
     b.add_argument("--start")
     b.add_argument("--end")
     sub.add_parser("reset-killswitch")
+    rb = sub.add_parser("rebalance", help="daily multi-strategy paper portfolio rebalance")
+    rb.add_argument("--portfolio-config", default="config/daily_portfolio.yaml")
+    rb.add_argument("--dry-run", action="store_true")
+    rb.add_argument("--force", action="store_true", help="rebalance even if already done today")
+    rb.add_argument("--ignore-window", action="store_true", help="skip the market-open / time-window gate")
     rs = sub.add_parser("research", help="research harness (historical data only, never trades)")
     rs.add_argument("action", choices=["explore", "test", "ict-baseline"])
     rs.add_argument("--synthetic", action="store_true", help="offline smoke run on synthetic data (no conclusions!)")
@@ -359,7 +413,7 @@ def build_parser() -> argparse.ArgumentParser:
     return p
 
 
-COMMANDS = {"check": cmd_check, "run": cmd_run, "flatten": cmd_flatten, "report": cmd_report, "backtest": cmd_backtest, "reset-killswitch": cmd_reset_killswitch, "test-order": cmd_test_order, "research": cmd_research}
+COMMANDS = {"check": cmd_check, "run": cmd_run, "flatten": cmd_flatten, "report": cmd_report, "backtest": cmd_backtest, "reset-killswitch": cmd_reset_killswitch, "test-order": cmd_test_order, "research": cmd_research, "rebalance": cmd_rebalance}
 
 
 def _gh_annotation(title: str, message: str) -> None:

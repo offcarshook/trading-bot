@@ -9,10 +9,10 @@
 # Holidays / early closes come from Alpaca's calendar inside the bot.
 name: trade (paper)
 
+# SCHEDULE PAUSED: the daily multi-strategy portfolio (daily-portfolio.yml) now runs on this
+# paper account and holds positions overnight; this intraday job flattens everything, so
+# running both would wipe the portfolio daily. Re-add the cron lines to re-enable.
 on:
-  schedule:
-    - cron: "17 13 * * 1-5"
-    - cron: "17 14 * * 1-5"
   workflow_dispatch:
     inputs:
       dry_run:

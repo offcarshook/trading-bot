@@ -8,10 +8,10 @@
 # trading job flattens any leftover position at the open.
 name: safety flatten (paper)
 
+# SCHEDULE PAUSED: the daily multi-strategy portfolio (daily-portfolio.yml) now runs on this
+# paper account and holds positions overnight; this intraday job flattens everything, so
+# running both would wipe the portfolio daily. Re-add the cron lines to re-enable.
 on:
-  schedule:
-    - cron: "41 19 * * 1-5"
-    - cron: "41 20 * * 1-5"
   workflow_dispatch:
     inputs:
       force:
