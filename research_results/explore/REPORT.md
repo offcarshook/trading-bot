@@ -5,9 +5,9 @@
 > advice. A strategy surviving every check can still fail going forward.
 
 
-- generated: `2026-10-21T17:45:12.657012+00:00` - commit `9ee48b4ae0`
+- generated: `2026-10-21T17:52:22.198390+00:00` - commit `a603f2dcea`
 - train **2016-01-01 -> 2021-12-31** | validation **2022-01-01 -> 2023-12-31** | test **2024-01-01 -> 2026-10-20 (LOCKED, not loaded)**
-- total parameter trials run: **54** (all counted in the multiple-testing corrections)
+- total parameter trials run: **132** (all counted in the multiple-testing corrections)
 - data feed: `sip`; costs: half-spread per ETF + 1.0bp open / 3.0bp stop slippage, margin 7.0%/yr
 
 ## Survivors (passed every pre-registered check)
@@ -21,9 +21,8 @@
 | _buy_hold_SPY_ | 1.63% | 0.13% | 0.18 | 24.51% | -9.23% | n/a |
 | _buy_hold_QQQ_ | 2.32% | 0.19% | 0.22 | 34.72% | -13.47% | n/a |
 | _60_40_SPY_IEF_ | -1.31% | -0.11% | -0.04 | 20.82% | -7.38% | n/a |
-| degen_meanrev_letf | 2.57% | 0.21% | 0.23 | 20.50% | -11.06% | 751 |
-| degen_trend_letf | 15.23% | 1.18% | 0.56 | 39.57% | -20.47% | 13 |
-| degen_combo | 10.22% | 0.81% | 0.44 | 40.03% | -29.63% | 1009 |
+| letf_momentum_rotation | -20.58% | -1.89% | -0.37 | 54.37% | -29.92% | 633 |
+| broad_etf_momentum | -1.22% | -0.10% | 0.04 | 30.80% | -10.02% | 1101 |
 
 ## Walk-forward out-of-sample (re-selected every 6 months on the trailing 3 years)
 
@@ -32,35 +31,32 @@
 | _buy_hold_SPY_ | 15.62% | 1.21% | 0.79 | 33.84% | -12.47% | n/a |
 | _buy_hold_QQQ_ | 22.50% | 1.70% | 0.92 | 35.00% | -13.47% | n/a |
 | _60_40_SPY_IEF_ | 9.80% | 0.78% | 0.82 | 21.14% | -7.38% | n/a |
-| degen_meanrev_letf | 33.03% | 2.40% | 1.31 | 25.31% | -13.37% | n/a |
-| degen_trend_letf | 56.61% | 3.80% | 1.13 | 48.14% | -24.09% | n/a |
-| degen_combo | 55.79% | 3.75% | 1.07 | 48.14% | -29.63% | n/a |
+| letf_momentum_rotation | -2.58% | -0.22% | 0.33 | 83.33% | -43.19% | n/a |
+| broad_etf_momentum | 12.22% | 0.96% | 0.59 | 31.33% | -11.52% | n/a |
 
 ## Robustness checks
 
 | strategy | trials | DSR (train) | PBO | neighbour ratio | null p | 2x-cost val Sharpe | WF choice stability | survives | failed checks |
 |---|---|---|---|---|---|---|---|---|---|
-| degen_meanrev_letf | 24 | 1.00 | 0.38 | 0.91 | 0.000 | 0.17 | 40% | no | validation_sharpe |
-| degen_trend_letf | 18 | 0.99 | 0.67 | 0.86 | 0.020 | 0.56 | 100% | no | pbo, enough_trades |
-| degen_combo | 12 | 0.99 | 0.21 | 0.86 | 0.030 | 0.38 | 50% | no | validation_sharpe |
+| letf_momentum_rotation | 108 | 0.93 | 0.76 | 0.94 | 0.300 | -0.39 | 20% | no | validation_sharpe, validation_cagr, walkforward_oos_sharpe, pbo, null_test, cost_stress_2x |
+| broad_etf_momentum | 24 | 0.90 | 0.13 | 0.78 | 0.430 | -0.00 | 50% | no | validation_sharpe, validation_cagr, dsr_train, null_test, cost_stress_2x |
 
 ## What it would take to hit 5-8% per month (leverage on walk-forward OOS returns)
 
 | strategy | Kelly leverage | best monthly geo at any leverage | 5%/mo: leverage | 5%/mo: hist max DD | 5%/mo: P(DD>50%) 1y | 8%/mo: leverage | 8%/mo: hist max DD |
 |---|---|---|---|---|---|---|---|
-| degen_meanrev_letf | 5.18x | 6.39% | 2.75x | 57.84% | 20.00% | unreachable | unreachable |
-| degen_trend_letf | 1.98x | 4.77% | unreachable | unreachable | - | unreachable | unreachable |
-| degen_combo | 1.69x | 4.23% | unreachable | unreachable | - | unreachable | unreachable |
+| letf_momentum_rotation | 0.33x | 0.44% | unreachable | unreachable | - | unreachable | unreachable |
+| broad_etf_momentum | 1.26x | 0.98% | unreachable | unreachable | - | unreachable | unreachable |
 
 ## Combined portfolio (top walk-forward (NOT survivors))
 
-Members: degen_meanrev_letf, degen_trend_letf, degen_combo (causal inverse-volatility weights on walk-forward OOS returns).
+Members: broad_etf_momentum, letf_momentum_rotation (causal inverse-volatility weights on walk-forward OOS returns).
 
 | strategy | CAGR | avg month (geo) | Sharpe | max DD | worst month | trades |
 |---|---|---|---|---|---|---|
-| portfolio | 39.54% | 2.81% | 1.23 | 30.05% | -16.51% | n/a |
+| portfolio | 10.58% | 0.84% | 0.47 | 46.51% | -19.30% | n/a |
 
-Adds value vs best single member (degen_meanrev_letf, WF Sharpe 1.31): **no**
+Adds value vs best single member (broad_etf_momentum, WF Sharpe 0.59): **no**
 
 ## Data quality
 
@@ -68,35 +64,25 @@ Adds value vs best single member (degen_meanrev_letf, WF Sharpe 1.31): **no**
 
 ## Per-strategy detail
 
-### degen_meanrev_letf (degen_leverage)
+### letf_momentum_rotation (leveraged_momentum)
 
-_Hypothesis:_ The mean-reversion edge on index ETFs survives being expressed through 3x leveraged ETFs with up to ~2x margin (~6x underlying).
+_Hypothesis:_ Holding the top-N (1-3) of 20 daily-reset 2x/3x leveraged ETFs by trailing 1/3/6-month (optionally last-week-skipped or volatility-adjusted) momentum, at most one fund per underlying index, equal weight with requested gross = margin capped to the FINRA leveraged-ETF maintenance limit (3x book <= ~1.29x), rebalanced on the first session of each week and moved to cash/IEF/TMF when SPY is below its 200-day SMA, earns a positive after-cost Sharpe that a random re-timing of the same holdings does not. SURVIVORSHIP CAVEAT: only leveraged ETFs that still exist today are in the universe (many closed after crashes; NUGT/ERX cut leverage in 2020), so the backtest is biased UPWARD.
 
-- selected on train: `{"margin": 1.5, "alloc": "equal_slots", "threshold": "strict", "vol_filter": true}`
-- train: CAGR 39.25%, Sharpe 1.73, max DD 17.54%, trades 751, time in market 25%, cost drag 1.23%/yr
+- selected on train: `{"score": "blend_skip1w", "top_n": 3, "regime": "IEF", "margin": 1.0, "rebalance": "W", "band": 0.02}`
+- train: CAGR 37.39%, Sharpe 0.89, max DD 46.07%, trades 633, time in market 87%, cost drag 1.17%/yr
 - share of trials with positive train Sharpe: 100%
-- regimes (train+val, ann. return): down_highvol: 19.2%, down_lowvol: 73.2%, up_highvol: 48.2%, up_lowvol: 21.2%, warmup: 0.0%
-- by year: 2016: 0.0%, 2017: 29.9%, 2018: 4.9%, 2019: 41.8%, 2020: 97.5%, 2021: 90.4%, 2022: 4.0%, 2023: 1.1%
+- regimes (train+val, ann. return): down_highvol: 15.6%, down_lowvol: 51.0%, up_highvol: 50.6%, up_lowvol: 26.1%, warmup: 0.0%
+- by year: 2016: 40.2%, 2017: 35.6%, 2018: -5.6%, 2019: 27.8%, 2020: 65.3%, 2021: 76.7%, 2022: -26.5%, 2023: -13.9%
 
-### degen_trend_letf (degen_leverage)
+### broad_etf_momentum (cross_sectional_momentum)
 
-_Hypothesis:_ Holding a 3x index ETF with up to ~2x margin only while the underlying trends up compounds faster than unlevered trend following.
+_Hypothesis:_ Holding the top-N (3/5) of 39 unlevered ETFs (core asset classes, SPDR sectors and the extended thematic/country list) by blended 1/3/6(/12)-month return, each slot kept only if it beats SHY's return over the same window (else parked in SHY out of unborrowed equity only), with requested risky gross = margin capped to Reg-T buying power (<= ~1.94x), rebalanced on the first session of each week or month, earns a positive after-cost Sharpe that a random re-timing does not. SURVIVORSHIP CAVEAT: the extended list was picked with hindsight of which ETFs are popular and still trade today, so the backtest is biased UPWARD.
 
-- selected on train: `{"lev": "TQQQ", "sma": 150, "margin": 1.0}`
-- train: CAGR 59.71%, Sharpe 1.20, max DD 48.14%, trades 13, time in market 82%, cost drag 0.03%/yr
+- selected on train: `{"score": "blend_1_3_6", "top_n": 5, "margin": 1.0, "rebalance": "W", "band": 0.01}`
+- train: CAGR 13.34%, Sharpe 0.77, max DD 26.51%, trades 1101, time in market 83%, cost drag 0.76%/yr
 - share of trials with positive train Sharpe: 100%
-- regimes (train+val, ann. return): down_highvol: 33.9%, down_lowvol: 3.7%, up_highvol: 66.7%, up_lowvol: 55.3%, warmup: 0.0%
-- by year: 2016: 3.3%, 2017: 118.4%, 2018: 3.5%, 2019: 65.5%, 2020: 133.5%, 2021: 83.0%, 2022: -33.2%, 2023: 98.2%
-
-### degen_combo (degen_leverage)
-
-_Hypothesis:_ Using idle time between mean-reversion trades for a margined TQQQ trend position raises growth over either sleeve alone.
-
-- selected on train: `{"trend_margin": 1.0, "sma": 150, "threshold": "strict", "vol_filter": true}`
-- train: CAGR 55.08%, Sharpe 1.11, max DD 48.25%, trades 1009, time in market 83%, cost drag 3.31%/yr
-- share of trials with positive train Sharpe: 100%
-- regimes (train+val, ann. return): down_highvol: 50.9%, down_lowvol: 98.8%, up_highvol: 59.6%, up_lowvol: 45.9%, warmup: 0.0%
-- by year: 2016: 3.3%, 2017: 115.4%, 2018: -30.4%, 2019: 88.6%, 2020: 187.1%, 2021: 65.0%, 2022: -24.0%, 2023: 59.6%
+- regimes (train+val, ann. return): down_highvol: 0.4%, down_lowvol: 41.2%, up_highvol: 29.1%, up_lowvol: 4.9%, warmup: 0.0%
+- by year: 2016: 0.0%, 2017: 28.7%, 2018: -9.8%, 2019: 10.6%, 2020: 59.9%, 2021: 3.1%, 2022: -22.8%, 2023: 26.4%
 
 
 ![walk-forward equity](walkforward_equity.png)
