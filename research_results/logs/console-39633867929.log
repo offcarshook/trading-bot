@@ -1,0 +1,23 @@
+16:21:12 INFO    ictbot.research.runner: exploring {"strategy": "leveraged_trend", "trials": 72}
+16:21:25 INFO    ictbot.research.runner: explored {"strategy": "leveraged_trend", "survives": false, "val_sharpe": 0.45292597899431225, "wf_sharpe": 0.9703150684748288, "seconds": 12.5}
+16:21:25 INFO    ictbot.research.runner: exploring {"strategy": "leveraged_trend_regime", "trials": 36}
+16:21:35 INFO    ictbot.research.runner: explored {"strategy": "leveraged_trend_regime", "survives": false, "val_sharpe": 0.47565464406764724, "wf_sharpe": 0.24024603748363302, "seconds": 10.1}
+16:21:35 INFO    ictbot.research.runner: exploring {"strategy": "meanrev_regime", "trials": 48}
+16:21:46 INFO    ictbot.research.runner: explored {"strategy": "meanrev_regime", "survives": false, "val_sharpe": 0.31766880066590664, "wf_sharpe": 1.5204435364857158, "seconds": 11.7}
+16:21:46 INFO    ictbot.research.runner: exploring {"strategy": "orb_intraday", "trials": 72}
+16:22:28 INFO    ictbot.research.runner: explored {"strategy": "orb_intraday", "survives": false, "val_sharpe": -0.6361243779206033, "wf_sharpe": -1.1338736575034063, "seconds": 41.7}
+16:22:28 INFO    ictbot.research.runner: exploring {"strategy": "overnight_drift", "trials": 16}
+16:22:33 INFO    ictbot.research.runner: explored {"strategy": "overnight_drift", "survives": false, "val_sharpe": -0.07862130500843019, "wf_sharpe": 0.2666947780276155, "seconds": 4.9}
+16:22:33 INFO    ictbot.research.runner: exploring {"strategy": "intraday_drift_control", "trials": 16}
+16:22:38 INFO    ictbot.research.runner: explored {"strategy": "intraday_drift_control", "survives": false, "val_sharpe": 0.14586755048687355, "wf_sharpe": 0.07965725488732016, "seconds": 4.9}
+16:22:38 INFO    ictbot.research.runner: exploring {"strategy": "regime_allocation", "trials": 36}
+16:22:48 INFO    ictbot.research.runner: explored {"strategy": "regime_allocation", "survives": false, "val_sharpe": -0.09879759498654778, "wf_sharpe": 0.8546980918223832, "seconds": 10.5}
+16:22:48 INFO    ictbot.research.runner: exploring {"strategy": "tsmom_multi_asset", "trials": 48}
+16:23:00 INFO    ictbot.research.runner: explored {"strategy": "tsmom_multi_asset", "survives": false, "val_sharpe": -0.22532148002300148, "wf_sharpe": 0.34937325057522733, "seconds": 11.8}
+16:23:00 INFO    ictbot.research.runner: exploring {"strategy": "vol_breakout_daily", "trials": 24}
+16:23:07 INFO    ictbot.research.runner: explored {"strategy": "vol_breakout_daily", "survives": false, "val_sharpe": -1.013591643482517, "wf_sharpe": -1.1203963549115579, "seconds": 6.3}
+16:23:07 INFO    ictbot.research.runner: exploring {"strategy": "xsmom_asset_rotation", "trials": 36}
+16:23:17 INFO    ictbot.research.runner: explored {"strategy": "xsmom_asset_rotation", "survives": false, "val_sharpe": -0.3968265726045549, "wf_sharpe": 0.7183709645586579, "seconds": 10.3}
+16:23:17 INFO    ictbot.research.runner: exploring {"strategy": "xsmom_sector_rotation", "trials": 72}
+16:23:30 INFO    ictbot.research.runner: explored {"strategy": "xsmom_sector_rotation", "survives": false, "val_sharpe": 0.6123668148638092, "wf_sharpe": 0.7310294379263214, "seconds": 12.9}
+explore report: research_results/explore/REPORT.md
