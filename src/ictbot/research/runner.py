@@ -106,6 +106,24 @@ def benchmarks(data: ResearchData, costs: CostModel) -> dict[str, StrategyResult
     return out
 
 
+def data_quality(data: ResearchData) -> dict:
+    """Per-symbol coverage and sanity checks (bad adjustments show up as huge jumps)."""
+    all_dates = data.dates()
+    out = {}
+    for sym, df in data.daily.items():
+        r = df["close"].pct_change().abs()
+        first = df.index.min()
+        expected = all_dates[all_dates >= first]
+        out[sym] = {"first": str(first.date()), "last": str(df.index.max().date()), "days": int(len(df)),
+                    "missing_sessions_after_first": int(len(expected.difference(df.index))),
+                    "max_abs_daily_return": float(r.max()) if len(r) else None,
+                    "days_abs_return_over_15pct": [str(d.date()) for d in r[r > 0.15].index][:10],
+                    "zero_volume_days": int((df["volume"] <= 0).sum())}
+    for sym, df in data.intraday.items():
+        out[f"{sym}_5m"] = {"bars": int(len(df)), "sessions": int(len(set(df.index.date))) if len(df) else 0}
+    return out
+
+
 # --------------------------------------------------------------------------- #
 # Explore one strategy
 # --------------------------------------------------------------------------- #
@@ -223,12 +241,13 @@ def run_explore(data_full: ResearchData, out_dir: Path, only: list[str] | None =
         specs = {k: v for k, v in specs.items() if k in only}
     labels = V.regime_labels(data.daily["SPY"]["close"]) if "SPY" in data.daily else pd.Series(dtype=str)
 
-    bench = {}
+    bench, bench_series = {}, {}
     for name, res in benchmarks(data, costs).items():
+        bench_series[f"_bench_{name}"] = {"wf_oos": V.cut(res.returns, dt.date(splits.train[0].year + 3, 1, 1), splits.validation[1])}
         bench[name] = {"train": summarize(res.slice(*splits.train).returns), "validation": summarize(res.slice(*splits.validation).returns),
                        "walkforward_window": summarize(V.cut(res.returns, dt.date(splits.train[0].year + 3, 1, 1), splits.validation[1]))}
 
-    reports, series = [], {}
+    reports, series = [], dict(bench_series)
     for name, spec in specs.items():
         if spec.uses_intraday and not any(len(v) for v in data.intraday.values()):
             reports.append({"strategy": name, "skipped": "no intraday data loaded"})
@@ -259,7 +278,7 @@ def run_explore(data_full: ResearchData, out_dir: Path, only: list[str] | None =
         "stage": "explore", "generated_utc": dt.datetime.now(dt.timezone.utc).isoformat(), "git_commit": git_commit(),
         "splits": splits.as_dict(), "test_period_loaded": False, "costs": dataclasses.asdict(costs), "criteria": CRITERIA,
         "data": {k: v for k, v in data_full.meta.items() if k != "manifests"}, "data_manifests": data_full.meta.get("manifests", []),
-        "benchmarks": bench, "strategies": reports, "survivors": survivors, "portfolio": portfolio,
+        "data_quality": data_quality(data_full), "benchmarks": bench, "strategies": reports, "survivors": survivors, "portfolio": portfolio,
         "total_trials": int(sum(r.get("n_trials", 0) for r in reports)),
         "strategy_import_errors": dict(IMPORT_ERRORS),
     }

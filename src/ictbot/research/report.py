@@ -96,6 +96,13 @@ def explore_markdown(res: dict) -> str:
                   TABLE_HEAD, _row("portfolio", pf["walkforward_oos"]),
                   "", f"Adds value vs best single member ({pf['best_single']}, WF Sharpe {num(pf['best_single_wf_sharpe'])}): **{'yes' if pf['adds_value'] else 'no'}**"]
 
+    dq = res.get("data_quality") or {}
+    if dq:
+        flagged = {k: v for k, v in dq.items() if v.get("days_abs_return_over_15pct") or v.get("missing_sessions_after_first", 0) > 5 or v.get("zero_volume_days", 0) > 0}
+        lines += ["", "## Data quality", "", f"{len(dq)} series loaded. Flagged (big jumps / gaps / zero volume): " + (", ".join(f"{k} {v}" for k, v in flagged.items()) if flagged else "none")]
+    if res.get("strategy_import_errors"):
+        lines += ["", "## Strategy import errors", "", "\n".join(f"- {k}: {v}" for k, v in res["strategy_import_errors"].items())]
+
     lines += ["", "## Per-strategy detail", ""]
     for r in res["strategies"]:
         if "checks" not in r:
