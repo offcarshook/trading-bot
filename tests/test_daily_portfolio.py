@@ -35,7 +35,7 @@ def data():
 
 
 def test_shipped_config_loads_and_is_within_hard_caps():
-    assert CFG.gross_cap <= 2.0 and CFG.max_drawdown_kill <= 0.5
+    assert CFG.gross_cap <= 2.0
     assert {s.strategy for s in CFG.sleeves} == {"xsmom_sector_rotation", "meanrev_regime"}
 
 

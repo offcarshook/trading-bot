@@ -15,6 +15,9 @@ on:
       reason:
         description: "Required for action=test: why the locked test period is being opened"
         default: ""
+      frozen:
+        description: "Frozen candidates file for action=test"
+        default: "research/frozen.json"
       no_null:
         description: "Skip the slow position-shift null test"
         type: boolean
@@ -58,7 +61,7 @@ jobs:
           ARGS="${{ inputs.action }}"
           [ -n "${{ inputs.only }}" ] && ARGS="$ARGS --only ${{ inputs.only }}"
           [ "${{ inputs.no_null }}" = "true" ] && ARGS="$ARGS --no-null"
-          if [ "${{ inputs.action }}" = "test" ]; then ARGS="$ARGS --reason \"${{ inputs.reason }}\""; fi
+          if [ "${{ inputs.action }}" = "test" ]; then ARGS="$ARGS --frozen ${{ inputs.frozen }} --reason \"${{ inputs.reason }}\""; fi
           eval python -m ictbot research $ARGS 2>&1 | tee research_console.log
           exit ${PIPESTATUS[0]}
       - name: Backup results as artifact

@@ -37,7 +37,6 @@ log = logging.getLogger(__name__)
 REQUIRED_KEYS = {"profile", "sleeves", "gross_cap", "rebalance_band", "max_drawdown_kill", "drawdown_reset_date",
                  "history_calendar_days", "client_order_id_prefix", "window_start", "window_end"}
 HARD_GROSS_CAP = 2.0
-HARD_MAX_DD_KILL = 0.50
 
 
 @dataclass(frozen=True)
@@ -53,7 +52,7 @@ class PortfolioConfig:
     sleeves: tuple[Sleeve, ...]
     gross_cap: float
     rebalance_band: float
-    max_drawdown_kill: float
+    max_drawdown_kill: float | None
     drawdown_reset_date: str | None
     history_calendar_days: int
     client_order_id_prefix: str
@@ -67,13 +66,14 @@ def load_portfolio_config(path: str | Path) -> PortfolioConfig:
     if missing or unknown:
         raise ValueError(f"daily portfolio config: missing {sorted(missing)} unknown {sorted(unknown)}")
     sleeves = tuple(Sleeve(s["strategy"], float(s["weight"]), dict(s["params"])) for s in raw["sleeves"])
-    cfg = PortfolioConfig(raw["profile"], sleeves, float(raw["gross_cap"]), float(raw["rebalance_band"]), float(raw["max_drawdown_kill"]),
+    kill = raw["max_drawdown_kill"]
+    cfg = PortfolioConfig(raw["profile"], sleeves, float(raw["gross_cap"]), float(raw["rebalance_band"]), None if kill is None else float(kill),
                           raw["drawdown_reset_date"], int(raw["history_calendar_days"]), str(raw["client_order_id_prefix"]),
                           str(raw["window_start"]), str(raw["window_end"]))
     if not 0 < cfg.gross_cap <= HARD_GROSS_CAP:
-        raise ValueError(f"gross_cap must be in (0, {HARD_GROSS_CAP}] (broker overnight limit)")
-    if not 0 < cfg.max_drawdown_kill <= HARD_MAX_DD_KILL:
-        raise ValueError(f"max_drawdown_kill must be in (0, {HARD_MAX_DD_KILL}]")
+        raise ValueError(f"gross_cap must be in (0, {HARD_GROSS_CAP}] - Alpaca rejects orders beyond ~2x overnight buying power")
+    if cfg.max_drawdown_kill is not None and not 0 < cfg.max_drawdown_kill <= 1.0:
+        raise ValueError("max_drawdown_kill must be in (0, 1] or null (disabled)")
     if any(s.weight < 0 for s in sleeves):
         raise ValueError("sleeve weights must be >= 0 (long-only portfolio)")
     specs = load_all_strategies()
@@ -216,7 +216,7 @@ def run_rebalance(cfg: PortfolioConfig, broker: Any, data: ResearchData, prices:
     report["drawdown"] = dd
     positions = broker.positions()
     todays_orders = broker.orders("all", after=ny_dt(today, dt.time(0)))
-    if dd >= cfg.max_drawdown_kill:
+    if cfg.max_drawdown_kill is not None and dd >= cfg.max_drawdown_kill:
         targets = TargetResult("", {}, 0.0, 1.0)
         report["kill_switch"] = True
         log.critical("drawdown kill-switch: liquidating daily portfolio", extra={"drawdown": dd})

@@ -64,12 +64,14 @@ INSTRUMENTS: dict[str, Instrument] = {
         Instrument("QLD", "leveraged", 2.5, 2.0),
         Instrument("UPRO", "leveraged", 2.0, 3.0),
         Instrument("TQQQ", "leveraged", 1.5, 3.0),
+        Instrument("TNA", "leveraged", 3.0, 3.0),
+        Instrument("UDOW", "leveraged", 3.0, 3.0),
     ]
 }
 
 CORE_DAILY = ["SPY", "QQQ", "IWM", "DIA", "EFA", "EEM", "TLT", "IEF", "SHY", "LQD", "HYG", "GLD", "SLV", "DBC", "VNQ", "UUP"]
 SECTORS = ["XLK", "XLF", "XLE", "XLV", "XLY", "XLP", "XLI", "XLU", "XLB"]
-LEVERAGED = ["SSO", "QLD", "UPRO", "TQQQ"]
+LEVERAGED = ["SSO", "QLD", "UPRO", "TQQQ", "TNA", "UDOW"]
 INTRADAY = ["SPY", "QQQ", "IWM"]
 ALL_DAILY = sorted(set(CORE_DAILY + SECTORS + LEVERAGED + ["USO"]))
 
