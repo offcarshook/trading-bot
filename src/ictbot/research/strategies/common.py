@@ -56,6 +56,8 @@ def margin_requirement(symbol: str) -> float:
     from ..universe import INSTRUMENTS
 
     inst = INSTRUMENTS.get(symbol)
+    if "/" in symbol or (inst and inst.asset_class == "crypto"):
+        return 1.0  # Alpaca crypto is not marginable: fully paid with cash
     lev = inst.leverage_factor if inst else 1.0
     return min(1.0, max(REG_T_INITIAL, LETF_MAINT_PER_X * lev))
 

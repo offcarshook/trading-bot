@@ -96,8 +96,22 @@ class Broker(Protocol):
     def equity_history(self) -> list[tuple[dt.date, float]]: ...
 
 
+def is_crypto(symbol: str) -> bool:
+    return "/" in symbol
+
+
+def crypto_pair(symbol: str) -> str:
+    """Alpaca reports crypto positions as 'BTCUSD'; orders and data use 'BTC/USD'."""
+    if "/" in symbol:
+        return symbol
+    for quote in ("USDT", "USDC", "USD", "BTC"):
+        if symbol.endswith(quote) and len(symbol) > len(quote):
+            return f"{symbol[: -len(quote)]}/{quote}"
+    return symbol
+
+
 def make_client_order_id(prefix: str, day: dt.date, symbol: str, setup_id: str, leg: str) -> str:
-    coid = f"{prefix}-{day:%y%m%d}-{symbol}-{setup_id}-{leg}"
+    coid = f"{prefix}-{day:%y%m%d}-{symbol.replace('/', '')}-{setup_id}-{leg}"
     if len(coid) > 128:  # Alpaca limit
         raise ValueError("client_order_id too long")
     return coid
@@ -166,7 +180,8 @@ class AlpacaBroker:
             qty = float(p.qty)
             if _enum(p.side) == "short" and qty > 0:
                 qty = -qty
-            out.append(BrokerPosition(p.symbol, qty, float(p.avg_entry_price), _f(p.current_price)))
+            sym = crypto_pair(p.symbol) if _enum(getattr(p, "asset_class", "")) == "crypto" else p.symbol
+            out.append(BrokerPosition(sym, qty, float(p.avg_entry_price), _f(p.current_price)))
         return out
 
     def orders(self, status: str = "open", after: dt.datetime | None = None) -> list[BrokerOrder]:
@@ -212,11 +227,13 @@ class AlpacaBroker:
         )
         return _order_view(call_with_retry(lambda: self._c.submit_order(order_data=req), what="submit_bracket"))
 
-    def submit_market(self, *, symbol: str, side: str, qty: int, client_order_id: str) -> BrokerOrder:
+    def submit_market(self, *, symbol: str, side: str, qty: float, client_order_id: str) -> BrokerOrder:
         from alpaca.trading.enums import OrderSide, TimeInForce
         from alpaca.trading.requests import MarketOrderRequest
 
-        req = MarketOrderRequest(symbol=symbol, qty=qty, side=OrderSide(side), time_in_force=TimeInForce.DAY, client_order_id=client_order_id)
+        # crypto accepts only gtc/ioc and fractional qty; stocks use DAY orders
+        tif = TimeInForce.GTC if is_crypto(symbol) else TimeInForce.DAY
+        req = MarketOrderRequest(symbol=symbol, qty=qty, side=OrderSide(side), time_in_force=tif, client_order_id=client_order_id)
         return _order_view(call_with_retry(lambda: self._c.submit_order(order_data=req), what="submit_market"))
 
     def cancel(self, order_id: str) -> None:

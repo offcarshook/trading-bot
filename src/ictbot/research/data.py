@@ -126,6 +126,16 @@ class AlpacaCryptoHistory:
         return df, manifest
 
 
+    def latest_prices(self, symbols: list[str]) -> dict[str, float]:
+        from alpaca.data.requests import CryptoLatestTradeRequest
+
+        if not symbols:
+            return {}
+        res = call_with_retry(lambda: self._client.get_crypto_latest_trade(CryptoLatestTradeRequest(symbol_or_symbols=list(symbols))),
+                              what="crypto latest trade")
+        return {s: float(t.price) for s, t in (res or {}).items() if t is not None and t.price}
+
+
 def rth_filter(bars: pd.DataFrame, sessions: list[TradingSession]) -> pd.DataFrame:
     """Keep bars whose START is inside [session.open, session.close)."""
     if bars.empty:

@@ -328,47 +328,80 @@ def cmd_research(args: argparse.Namespace) -> int:
 
 
 def cmd_rebalance(args: argparse.Namespace) -> int:
-    """Daily multi-strategy PAPER portfolio rebalance (config/daily_portfolio.yaml)."""
+    """Daily multi-strategy PAPER portfolio rebalance (config/daily_portfolio.yaml).
+
+    --asset-class stocks: after the NYSE open, inside window_start..window_end (NY)
+    --asset-class crypto: just after the 00:00 UTC daily crypto bar closes
+    (00:05-03:00 UTC); a no-op when the config has no crypto sleeves.
+    """
     import os
 
-    from .daily_portfolio import load_portfolio_config, required_symbols, run_rebalance
+    from .daily_portfolio import is_crypto_symbol, load_portfolio_config, required_symbols, run_rebalance
     from .data import AlpacaMarketData
     from .execution import AlpacaBroker
-    from .research.data import AlpacaHistory, load_research_data
+    from .research.data import AlpacaCryptoHistory, AlpacaHistory, load_research_data
     from .safety import load_paper_credentials
 
     pcfg = load_portfolio_config(args.portfolio_config)
     now = now_ny()
+    utc_now = now.astimezone(dt.timezone.utc)
+    syms = required_symbols(pcfg)
+    stock_syms = [s for s in syms if not is_crypto_symbol(s)]
+    crypto_syms = [s for s in syms if is_crypto_symbol(s)]
+    if args.asset_class == "crypto" and not crypto_syms:
+        log.info("config has no crypto sleeves - nothing to do")
+        return 0
     creds = load_paper_credentials()
     broker = AlpacaBroker(creds.key_id, creds.secret_key)
     if not args.ignore_window:
-        if not broker.clock().is_open:
-            log.info("market closed - nothing to do")
-            return 0
-        if not (parse_hhmm(pcfg.window_start) <= now.time() <= parse_hhmm(pcfg.window_end)):
-            log.info("outside the daily rebalance window - exiting (expected for the off-DST cron trigger)", extra={"ny": now.isoformat()})
-            return 0
-    end = now.date() - dt.timedelta(days=1)
+        if args.asset_class == "crypto":
+            if not (CRYPTO_WINDOW_UTC[0] <= utc_now.time() <= CRYPTO_WINDOW_UTC[1]):
+                log.info("outside the crypto rebalance window (00:05-03:00 UTC) - exiting", extra={"utc": utc_now.isoformat()})
+                return 0
+        else:
+            if not broker.clock().is_open:
+                log.info("market closed - nothing to do")
+                return 0
+            if not (parse_hhmm(pcfg.window_start) <= now.time() <= parse_hhmm(pcfg.window_end)):
+                log.info("outside the daily rebalance window - exiting (expected for the off-DST cron trigger)", extra={"ny": now.isoformat()})
+                return 0
     start = now.date() - dt.timedelta(days=pcfg.history_calendar_days)
-    sessions = [x for x in broker.sessions(start, end) if x.day <= end]
-    syms = required_symbols(pcfg)
+    # completed sessions only (SIP history is available 15 minutes after the fact)
+    sessions = [x for x in broker.sessions(start, now.date()) if x.close <= now - dt.timedelta(minutes=16)]
+    end = sessions[-1].day if sessions else now.date() - dt.timedelta(days=1)
     hist = AlpacaHistory(creds.key_id, creds.secret_key, cache_dir="data_cache/daily_portfolio", feed="sip")
-    data = load_research_data(hist, sessions, syms, [], start, end)
+    chist = AlpacaCryptoHistory(creds.key_id, creds.secret_key, cache_dir="data_cache/daily_portfolio") if crypto_syms else None
+    data = load_research_data(hist, sessions, stock_syms, [], start, end)
+    if chist is not None:  # the last COMPLETE UTC day; today's bar is still forming
+        crypto_end = utc_now.date() - dt.timedelta(days=1)
+        data.crypto.update(load_research_data(hist, [], [], [], start, crypto_end, crypto_history=chist, crypto_symbols=crypto_syms).crypto)
     md = AlpacaMarketData(creds.key_id, creds.secret_key, "iex")
-    prices = {}
-    for sym in syms:
+    prices: dict[str, float] = {}
+    for sym in stock_syms:
         try:
             prices[sym] = md.latest_trade_price(sym) or float(data.daily[sym]["close"].iloc[-1])
         except Exception:  # noqa: BLE001
             prices[sym] = float(data.daily[sym]["close"].iloc[-1]) if sym in data.daily else 0.0
-    rep = run_rebalance(pcfg, broker, data, prices, now, dry_run=args.dry_run, force=args.force, out_dir=Path(cfg_reports_dir(args)))
-    msg = (f"daily portfolio ({pcfg.profile}) decision {rep.get('decision_date')} equity {rep['equity']:.0f} dd {rep['drawdown']:.1%} "
-           f"targets {json.dumps({k: round(v, 3) for k, v in rep.get('targets', {}).items()})} orders {len(rep.get('sent', []))}"
-           f"{' DRY RUN' if args.dry_run else ''} {rep.get('skipped', '')}")
+    if chist is not None:
+        try:
+            prices.update(chist.latest_prices(crypto_syms))
+        except Exception as exc:  # noqa: BLE001
+            log.warning("crypto latest price failed - using last daily close", extra={"error": str(exc)[:200]})
+        for sym in crypto_syms:
+            if not prices.get(sym) and sym in data.crypto and len(data.crypto[sym]):
+                prices[sym] = float(data.crypto[sym]["close"].iloc[-1])
+    rep = run_rebalance(pcfg, broker, data, prices, now, dry_run=args.dry_run, force=args.force,
+                        out_dir=Path(cfg_reports_dir(args)), asset_class=args.asset_class)
+    msg = (f"daily portfolio ({pcfg.profile}, {args.asset_class}) decision {rep.get('decision_date')} equity {rep['equity']:.0f} "
+           f"dd {rep['drawdown']:.1%} targets {json.dumps({k: round(v, 3) for k, v in rep.get('targets', {}).items()})} "
+           f"orders {len(rep.get('sent', []))} errors {len(rep.get('errors', []))}{' DRY RUN' if args.dry_run else ''} {rep.get('skipped', '')}")
     log.info(msg)
     if os.environ.get("GITHUB_ACTIONS") == "true":
         print(f"::notice title=daily portfolio::{msg}", flush=True)
     return 0
+
+
+CRYPTO_WINDOW_UTC = (dt.time(0, 5), dt.time(3, 0))
 
 
 def cfg_reports_dir(args: argparse.Namespace) -> str:
@@ -416,6 +449,8 @@ def build_parser() -> argparse.ArgumentParser:
     rb.add_argument("--dry-run", action="store_true")
     rb.add_argument("--force", action="store_true", help="rebalance even if already done today")
     rb.add_argument("--ignore-window", action="store_true", help="skip the market-open / time-window gate")
+    rb.add_argument("--asset-class", choices=["all", "stocks", "crypto"], default="stocks",
+                    help="which positions this run manages (stocks after the NYSE open, crypto after 00:00 UTC)")
     rs = sub.add_parser("research", help="research harness (historical data only, never trades)")
     rs.add_argument("action", choices=["explore", "test", "ict-baseline", "portfolio-sim"])
     rs.add_argument("--portfolio-configs", default="config/daily_portfolio.yaml")
