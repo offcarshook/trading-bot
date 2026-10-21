@@ -1,3 +1,4 @@
 run 39619353377 action=ict-baseline only= commit=85895e0d41c75c9f2d009cee895647d570460fd7
 run 39619363595 action=explore only=tsmom_multi_asset commit=85895e0d41c75c9f2d009cee895647d570460fd7
 run 39633867929 action=explore only= commit=5147126898a580fefa800960a4689abc25dfa9d7
+run 39634704141 action=test only= commit=1f9e549e94d9d01df49e61098de3619aee7b5983
