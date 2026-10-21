@@ -1,0 +1,78 @@
+17:07:34 INFO    ictbot.research.data: downloaded {"symbol": "ARKK", "minutes": 30, "feed": "sip", "adjustment": "all", "start": "2016-01-01", "end": "2026-10-20", "rows": 59213, "sha256": "5bba6f382f5a3ac75dc33d1ae46ccc75c27c9cd4f6a83dfcf9665135b65b92a8", "first": "2016-01-04 09:30:00-05:00", "last": "2026-10-20 19:00:00-04:00"}
+17:07:56 INFO    ictbot.research.data: downloaded {"symbol": "CURE", "minutes": 30, "feed": "sip", "adjustment": "all", "start": "2016-01-01", "end": "2026-10-20", "rows": 41015, "sha256": "238320d10476e277395810b0e3172db8516d5e8b4c5b33504c24e2323b8c6202", "first": "2016-01-04 08:00:00-05:00", "last": "2026-10-20 17:30:00-04:00"}
+17:08:11 INFO    ictbot.research.data: downloaded {"symbol": "DPST", "minutes": 30, "feed": "sip", "adjustment": "all", "start": "2016-01-01", "end": "2026-10-20", "rows": 47456, "sha256": "3686e2497baba925d171dbf8ba10c74fc287fe82df9bbd122adfcc6447be4645", "first": "2016-01-04 10:00:00-05:00", "last": "2026-10-20 19:30:00-04:00"}
+17:08:22 INFO    ictbot.research.data: downloaded {"symbol": "DRN", "minutes": 30, "feed": "sip", "adjustment": "all", "start": "2016-01-01", "end": "2026-10-20", "rows": 45426, "sha256": "2cc4e3aceb2401ad0d5414137cb2c16e6fa356a0afba4dae7b2e0957d0ba24a4", "first": "2016-01-04 04:00:00-05:00", "last": "2026-10-20 19:30:00-04:00"}
+17:09:24 INFO    ictbot.research.data: downloaded {"symbol": "ERX", "minutes": 30, "feed": "sip", "adjustment": "all", "start": "2016-01-01", "end": "2026-10-20", "rows": 56759, "sha256": "ecc3c836be1f2a51f585340ae5a13f49167ea1edc4a5fb219e3f909240d601f5", "first": "2016-01-04 06:30:00-05:00", "last": "2026-10-20 19:00:00-04:00"}
+17:10:23 INFO    ictbot.research.data: downloaded {"symbol": "EWJ", "minutes": 30, "feed": "sip", "adjustment": "all", "start": "2016-01-01", "end": "2026-10-20", "rows": 50874, "sha256": "c103c02f3ae29b4fa21b15c892bbf11bf74a50c4d2833107b4bc46b3d1b5fa7b", "first": "2016-01-04 07:00:00-05:00", "last": "2026-10-20 19:30:00-04:00"}
+17:16:05 INFO    ictbot.research.data: downloaded {"symbol": "EWZ", "minutes": 30, "feed": "sip", "adjustment": "all", "start": "2016-01-01", "end": "2026-10-20", "rows": 60400, "sha256": "f59b5224c05829e31b8a8b2edecc785e895ad995ed35c860f8091469218e21e6", "first": "2016-01-04 04:00:00-05:00", "last": "2026-10-20 19:30:00-04:00"}
+17:16:49 INFO    ictbot.research.data: downloaded {"symbol": "FAS", "minutes": 30, "feed": "sip", "adjustment": "all", "start": "2016-01-01", "end": "2026-10-20", "rows": 61176, "sha256": "68bb5cef071fa6408625d0baa082a6e5f1975a880ff64f5cebb533044ad89cae", "first": "2016-01-04 04:00:00-05:00", "last": "2026-10-20 19:30:00-04:00"}
+17:17:17 INFO    ictbot.research.data: downloaded {"symbol": "FXI", "minutes": 30, "feed": "sip", "adjustment": "all", "start": "2016-01-01", "end": "2026-10-20", "rows": 72264, "sha256": "2dff964bed3fd776b8f3d856fc2413411bd903648e2afdef4a13b0e6eced3f72", "first": "2016-01-04 04:00:00-05:00", "last": "2026-10-20 18:00:00-04:00"}
+17:17:54 INFO    ictbot.research.data: downloaded {"symbol": "GDX", "minutes": 30, "feed": "sip", "adjustment": "all", "start": "2016-01-01", "end": "2026-10-20", "rows": 78913, "sha256": "0edbad2ba913823fd472aaee1ecf2881004ddc64dcb6af9fc63d8497c9821e0c", "first": "2016-01-04 06:00:00-05:00", "last": "2026-10-20 19:30:00-04:00"}
+17:18:48 INFO    ictbot.research.data: downloaded {"symbol": "IBB", "minutes": 30, "feed": "sip", "adjustment": "all", "start": "2016-01-01", "end": "2026-10-20", "rows": 48128, "sha256": "bd6c989832e878aaada3c45afc14d402d3441ee6d7644d9650b56c8dbdfc34f0", "first": "2016-01-04 06:00:00-05:00", "last": "2026-10-20 16:00:00-04:00"}
+17:20:02 INFO    ictbot.research.data: downloaded {"symbol": "IGV", "minutes": 30, "feed": "sip", "adjustment": "all", "start": "2016-01-01", "end": "2026-10-20", "rows": 46449, "sha256": "3b1556e0ccf6176bb64d34fecf659548ac5f4d684a041916d802a99a01bcc334", "first": "2016-01-04 09:30:00-05:00", "last": "2026-10-20 19:30:00-04:00"}
+17:22:28 INFO    ictbot.research.data: downloaded {"symbol": "INDA", "minutes": 30, "feed": "sip", "adjustment": "all", "start": "2016-01-01", "end": "2026-10-20", "rows": 49356, "sha256": "5e3bf2f5cb2bdccdf34e42636e7ddd72428123b8bee36dafef78b296c654256e", "first": "2016-01-04 09:00:00-05:00", "last": "2026-10-20 18:00:00-04:00"}
+17:22:52 INFO    ictbot.research.data: downloaded {"symbol": "ITB", "minutes": 30, "feed": "sip", "adjustment": "all", "start": "2016-01-01", "end": "2026-10-20", "rows": 44154, "sha256": "3c4073634b4a3dcdec0433e0c403d15ce1d9705ce3d8508b4224e5c9f60bbce7", "first": "2016-01-04 04:00:00-05:00", "last": "2026-10-20 18:30:00-04:00"}
+17:27:35 INFO    ictbot.research.data: downloaded {"symbol": "KWEB", "minutes": 30, "feed": "sip", "adjustment": "all", "start": "2016-01-01", "end": "2026-10-20", "rows": 62855, "sha256": "6d26dbaef8d426c5f8e5fff2f14d2c954b0484110943505194b5091d3f79a87c", "first": "2016-01-04 09:30:00-05:00", "last": "2026-10-20 19:30:00-04:00"}
+17:31:33 INFO    ictbot.research.data: downloaded {"symbol": "LABU", "minutes": 30, "feed": "sip", "adjustment": "all", "start": "2016-01-01", "end": "2026-10-20", "rows": 70940, "sha256": "73c238015de5cdaeee77272c18ac6af00332fbb92a32c5a5a7734b8e3cd5eaac", "first": "2016-01-04 07:30:00-05:00", "last": "2026-10-20 19:30:00-04:00"}
+17:31:41 INFO    ictbot.research.data: downloaded {"symbol": "MIDU", "minutes": 30, "feed": "sip", "adjustment": "all", "start": "2016-01-01", "end": "2026-10-20", "rows": 37613, "sha256": "4dab9a983c17dcc71df845c4141fcecd5d531a7e47eb8821f3ca32231cf8ea7d", "first": "2016-01-04 08:00:00-05:00", "last": "2026-10-20 16:00:00-04:00"}
+17:32:04 INFO    ictbot.research.data: downloaded {"symbol": "NUGT", "minutes": 30, "feed": "sip", "adjustment": "all", "start": "2016-01-01", "end": "2026-10-20", "rows": 73959, "sha256": "462471518f29a9c18c124c6c246b2c12603d443aeccf2d71435e974ef99ae144", "first": "2016-01-04 04:00:00-05:00", "last": "2026-10-20 19:30:00-04:00"}
+17:32:45 INFO    ictbot.research.data: downloaded {"symbol": "RETL", "minutes": 30, "feed": "sip", "adjustment": "all", "start": "2016-01-01", "end": "2026-10-20", "rows": 41230, "sha256": "d0979e4b8b64be3515508bed30817fd556a5dd61412080ea1236cb24c6bc8a54", "first": "2016-01-04 09:30:00-05:00", "last": "2026-10-20 16:30:00-04:00"}
+17:33:10 INFO    ictbot.research.data: downloaded {"symbol": "SMH", "minutes": 30, "feed": "sip", "adjustment": "all", "start": "2016-01-01", "end": "2026-10-20", "rows": 60667, "sha256": "bb0dbb0c7f6d4a23f2f4d1ea333bbc355d5635c6272d838f89be815c9fbb517d", "first": "2016-01-04 09:30:00-05:00", "last": "2026-10-20 19:30:00-04:00"}
+17:34:36 INFO    ictbot.research.data: downloaded {"symbol": "SOXL", "minutes": 30, "feed": "sip", "adjustment": "all", "start": "2016-01-01", "end": "2026-10-20", "rows": 71485, "sha256": "22c99b85f990e3b334704389abf2de35df93b089cef0ed0136fad4031102cf65", "first": "2016-01-04 06:30:00-05:00", "last": "2026-10-20 19:30:00-04:00"}
+17:36:01 INFO    ictbot.research.data: downloaded {"symbol": "SPXL", "minutes": 30, "feed": "sip", "adjustment": "all", "start": "2016-01-01", "end": "2026-10-20", "rows": 79516, "sha256": "b6e74574fd55b12a571f27efa71198721bb1267a5ac22faf7bbfda7339ceacda", "first": "2016-01-04 04:00:00-05:00", "last": "2026-10-20 19:30:00-04:00"}
+17:36:34 INFO    ictbot.research.data: downloaded {"symbol": "TAN", "minutes": 30, "feed": "sip", "adjustment": "all", "start": "2016-01-01", "end": "2026-10-20", "rows": 46415, "sha256": "8fbe2c81b7e941ede3ff8cc2266db17bb65ad0af35a672a71f78cffff1a38d1f", "first": "2016-01-04 04:00:00-05:00", "last": "2026-10-20 19:30:00-04:00"}
+17:37:18 INFO    ictbot.research.data: downloaded {"symbol": "TECL", "minutes": 30, "feed": "sip", "adjustment": "all", "start": "2016-01-01", "end": "2026-10-20", "rows": 59113, "sha256": "6f401fb3e68475d1067937ea43c72f89e10f58358788aee64d1b156cacb1cfea", "first": "2016-01-04 08:00:00-05:00", "last": "2026-10-20 19:30:00-04:00"}
+17:38:38 INFO    ictbot.research.data: downloaded {"symbol": "TMF", "minutes": 30, "feed": "sip", "adjustment": "all", "start": "2016-01-01", "end": "2026-10-20", "rows": 64657, "sha256": "d3ee775e54787b8711e9bdde4feae5c4445bd4f7075ff1c19a67f11c77757edb", "first": "2016-01-04 06:30:00-05:00", "last": "2026-10-20 19:30:00-04:00"}
+17:39:24 INFO    ictbot.research.data: downloaded {"symbol": "URA", "minutes": 30, "feed": "sip", "adjustment": "all", "start": "2016-01-01", "end": "2026-10-20", "rows": 52206, "sha256": "e52d048e2cfffb1c2b160a9677dc82dcb5867e17cd081d32c1f456022755b6ef", "first": "2016-01-04 08:00:00-05:00", "last": "2026-10-20 19:30:00-04:00"}
+17:40:23 INFO    ictbot.research.data: downloaded {"symbol": "XBI", "minutes": 30, "feed": "sip", "adjustment": "all", "start": "2016-01-01", "end": "2026-10-20", "rows": 62649, "sha256": "692189ab3f543370fdb0d87acacb549dfb27295f3a604a044c0f7d297e97c6c7", "first": "2016-01-04 04:00:00-05:00", "last": "2026-10-20 19:30:00-04:00"}
+17:41:22 INFO    ictbot.research.data: downloaded {"symbol": "XME", "minutes": 30, "feed": "sip", "adjustment": "all", "start": "2016-01-01", "end": "2026-10-20", "rows": 44818, "sha256": "8e0c2f38c097a772f5d25e1bc551703884832547f606dfb8f2d33a150af4d15e", "first": "2016-01-04 07:30:00-05:00", "last": "2026-10-20 16:00:00-04:00"}
+17:42:39 INFO    ictbot.research.data: downloaded {"symbol": "YINN", "minutes": 30, "feed": "sip", "adjustment": "all", "start": "2016-01-01", "end": "2026-10-20", "rows": 72621, "sha256": "acac0725058caa988884c26ddc5a7c1d41dcffcf09fefab6f412606b6d0474d4", "first": "2016-01-04 04:00:00-05:00", "last": "2026-10-20 19:30:00-04:00"}
+17:42:44 INFO    ictbot.research.data: downloaded crypto {"symbol": "BTC/USD", "timeframe": "1Day", "feed": "crypto_us", "start": "2016-01-01", "end": "2026-10-20", "rows": 2119, "sha256": "d00a4cb61a69e645c51a512a8f59bc6dc768e57f572dd1d4c21645ee34788468", "first": "2021-01-01", "last": "2026-10-20"}
+17:42:44 INFO    ictbot.research.data: downloaded crypto {"symbol": "ETH/USD", "timeframe": "1Day", "feed": "crypto_us", "start": "2016-01-01", "end": "2026-10-20", "rows": 2119, "sha256": "8b790062bc1f30d4ac29df3e3b89930ef3a599c5e9b038401cf843052776cd74", "first": "2021-01-01", "last": "2026-10-20"}
+17:42:44 INFO    ictbot.research.data: downloaded crypto {"symbol": "SOL/USD", "timeframe": "1Day", "feed": "crypto_us", "start": "2016-01-01", "end": "2026-10-20", "rows": 1701, "sha256": "115a74a4fb32aadec370469b8eac5c5951edb8e902f3ac9ce1d0ee444c4b7578", "first": "2021-01-01", "last": "2026-10-20"}
+17:42:44 INFO    ictbot.research.data: downloaded crypto {"symbol": "LTC/USD", "timeframe": "1Day", "feed": "crypto_us", "start": "2016-01-01", "end": "2026-10-20", "rows": 2119, "sha256": "b46970210fe4e3207c8441ec69b07fe7984ee74d44c0d5976e1dd7e975c8382d", "first": "2021-01-01", "last": "2026-10-20"}
+17:42:44 INFO    ictbot.research.data: downloaded crypto {"symbol": "BCH/USD", "timeframe": "1Day", "feed": "crypto_us", "start": "2016-01-01", "end": "2026-10-20", "rows": 2119, "sha256": "db5fbeb9d789727b8c50ea7c77ab4e9b55fd68aa52e78aaa4521d7ea9c015738", "first": "2021-01-01", "last": "2026-10-20"}
+17:42:45 INFO    ictbot.research.data: downloaded crypto {"symbol": "LINK/USD", "timeframe": "1Day", "feed": "crypto_us", "start": "2016-01-01", "end": "2026-10-20", "rows": 2119, "sha256": "e014a42c42200cc445810cb6c90f9a366dd28695e1d1ae65c4e701a5fdcc6d71", "first": "2021-01-01", "last": "2026-10-20"}
+17:42:45 INFO    ictbot.research.data: downloaded crypto {"symbol": "AVAX/USD", "timeframe": "1Day", "feed": "crypto_us", "start": "2016-01-01", "end": "2026-10-20", "rows": 1798, "sha256": "5ff4b40f66cbc727b681f2b02176d1623af9bbf3e84e021c10cdd911f4ffac3e", "first": "2021-11-18", "last": "2026-10-20"}
+17:42:45 INFO    ictbot.research.data: downloaded crypto {"symbol": "DOGE/USD", "timeframe": "1Day", "feed": "crypto_us", "start": "2016-01-01", "end": "2026-10-20", "rows": 2119, "sha256": "b34de258f297cfaf8158622d0982660058298304ac8626c0e4a4fd76abd7b5d2", "first": "2021-01-01", "last": "2026-10-20"}
+17:42:45 INFO    ictbot.research.data: downloaded crypto {"symbol": "UNI/USD", "timeframe": "1Day", "feed": "crypto_us", "start": "2016-01-01", "end": "2026-10-20", "rows": 2119, "sha256": "fb594a2d82f3f928ae88b3555c7b8a70ac0edb3f08c36f4a1b50dda0a45a1383", "first": "2021-01-01", "last": "2026-10-20"}
+17:42:45 INFO    ictbot.research.data: downloaded crypto {"symbol": "AAVE/USD", "timeframe": "1Day", "feed": "crypto_us", "start": "2016-01-01", "end": "2026-10-20", "rows": 1924, "sha256": "bde917b598ef27e39dc9ec40bdbd3243fd1ad5ed80183a2b4c2bdd352d88fa49", "first": "2021-07-15", "last": "2026-10-20"}
+{
+ "config/daily_portfolio.yaml": {
+  "walkforward_window_2019_2023": {
+   "monthly_geo_mean": 0.01909794829336864,
+   "cagr": 0.2555126728609287,
+   "max_drawdown": 0.16842825692999852,
+   "worst_month": -0.08464080823919651,
+   "sharpe": 1.3282806501783633
+  },
+  "train": {
+   "monthly_geo_mean": 0.017404072642730917,
+   "cagr": 0.2304543416182132,
+   "max_drawdown": 0.16919516449446215,
+   "worst_month": -0.09624555181959649,
+   "sharpe": 1.308216868580968
+  },
+  "validation": {
+   "monthly_geo_mean": 0.0051567349492791514,
+   "cagr": 0.06416456865704845,
+   "max_drawdown": 0.16842825692999897,
+   "worst_month": -0.08214846990880531,
+   "sharpe": 0.5174793630204361
+  },
+  "test_2024_plus": {
+   "monthly_geo_mean": 0.012108230881503035,
+   "cagr": 0.15748044250795767,
+   "max_drawdown": 0.10852858981319813,
+   "worst_month": -0.06254542322138967,
+   "sharpe": 1.0350392147497258
+  },
+  "full": {
+   "monthly_geo_mean": 0.013747210482158545,
+   "cagr": 0.17875777700618212,
+   "max_drawdown": 0.16919516449446215,
+   "worst_month": -0.09624555181959649,
+   "sharpe": 1.1110075165849258
+  }
+ }
+}
