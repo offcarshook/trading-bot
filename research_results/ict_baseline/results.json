@@ -1,0 +1,155 @@
+{
+ "stage": "ict_baseline",
+ "git_commit": "85895e0d41c75c9f2d009cee895647d570460fd7",
+ "config_symbols": [
+  "SPY",
+  "QQQ"
+ ],
+ "feed": "sip",
+ "train": {
+  "days": 1511,
+  "start": "2016-01-04",
+  "end": "2021-12-31",
+  "total_return": -0.001031710629999405,
+  "cagr": -0.00017213957596784457,
+  "monthly_geo_mean": -1.4336608476495094e-05,
+  "monthly_arith_mean": -1.4194601799642307e-05,
+  "pct_positive_months": 0.08333333333333333,
+  "best_month": 0.002794634704425869,
+  "worst_month": -0.0023115520453339533,
+  "ann_vol": 0.0018437070244184416,
+  "sharpe": -0.09245317201284528,
+  "sortino": -0.14689608049674835,
+  "max_drawdown": 0.0061497175058400355,
+  "calmar": -0.02799146071415044,
+  "psr_0": 0.41200421714720137,
+  "t_stat_mean": -0.22638819555664075,
+  "skew": 5.597594333109331,
+  "excess_kurtosis": 348.40342587440307,
+  "hit_rate_days": 0.25
+ },
+ "validation": {
+  "days": 501,
+  "start": "2022-01-03",
+  "end": "2023-12-29",
+  "total_return": 0.00367137277431806,
+  "cagr": 0.0018449967889282437,
+  "monthly_geo_mean": 0.00015270539725964483,
+  "monthly_arith_mean": 0.00015293880751239552,
+  "pct_positive_months": 0.08333333333333333,
+  "best_month": 0.0029736399422291004,
+  "worst_month": -0.000667282392834756,
+  "ann_vol": 0.002870321825995164,
+  "sharpe": 0.643623957926132,
+  "sortino": 2.338610350362804,
+  "max_drawdown": 0.0009016696652242029,
+  "calmar": 2.0462003548377994,
+  "psr_0": 0.8936525589758705,
+  "t_stat_mean": 0.9075086938397379,
+  "skew": 13.84947681881543,
+  "excess_kurtosis": 218.88568392611597,
+  "hit_rate_days": 0.2857142857142857
+ },
+ "trade_metrics_train": {
+  "trades": 20,
+  "open_trades": 0,
+  "win_rate": 0.35,
+  "avg_r": -0.177,
+  "expectancy_r": -0.177,
+  "expectancy_usd": -5.16,
+  "net_pnl": -103.17,
+  "profit_factor": 0.87,
+  "avg_win": 98.3,
+  "avg_loss": -60.87,
+  "avg_mae_r": 0.954,
+  "avg_mfe_r": 1.14,
+  "sharpe": null,
+  "sortino": null,
+  "max_drawdown_pct": null
+ },
+ "trade_metrics_validation": {
+  "trades": 5,
+  "open_trades": 0,
+  "win_rate": 0.4,
+  "avg_r": 0.386,
+  "expectancy_r": 0.386,
+  "expectancy_usd": 73.35,
+  "net_pnl": 366.76,
+  "profit_factor": 3.106,
+  "avg_win": 270.43,
+  "avg_loss": -58.04,
+  "avg_mae_r": 0.794,
+  "avg_mfe_r": 1.537,
+  "sharpe": null,
+  "sortino": null,
+  "max_drawdown_pct": null
+ },
+ "per_setup": [
+  {
+   "setup": "level_session-L",
+   "trades": 1,
+   "win_rate": 1.0,
+   "avg_r": 2.219,
+   "net_pnl": 111.86
+  },
+  {
+   "setup": "level_session-S",
+   "trades": 3,
+   "win_rate": 0.667,
+   "avg_r": 0.354,
+   "net_pnl": 250.53
+  },
+  {
+   "setup": "opening_range-L",
+   "trades": 2,
+   "win_rate": 0.0,
+   "avg_r": -1.124,
+   "net_pnl": -103.16
+  },
+  {
+   "setup": "opening_range-S",
+   "trades": 6,
+   "win_rate": 0.333,
+   "avg_r": -0.042,
+   "net_pnl": 147.69
+  },
+  {
+   "setup": "prev_day-S",
+   "trades": 1,
+   "win_rate": 0.0,
+   "avg_r": -0.369,
+   "net_pnl": -24.27
+  },
+  {
+   "setup": "prev_week-L",
+   "trades": 1,
+   "win_rate": 0.0,
+   "avg_r": -1.389,
+   "net_pnl": -20.23
+  },
+  {
+   "setup": "prev_week-S",
+   "trades": 4,
+   "win_rate": 0.25,
+   "avg_r": -0.41,
+   "net_pnl": 1.28
+  },
+  {
+   "setup": "swing-L",
+   "trades": 4,
+   "win_rate": 0.25,
+   "avg_r": -0.2,
+   "net_pnl": -140.23
+  },
+  {
+   "setup": "swing-S",
+   "trades": 3,
+   "win_rate": 0.667,
+   "avg_r": 0.602,
+   "net_pnl": 40.12
+  }
+ ],
+ "n_trades": 25,
+ "signals_evaluated": 1565,
+ "trading_days": 2012
+}
