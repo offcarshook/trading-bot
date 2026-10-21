@@ -12,6 +12,10 @@ on:
       below_pct:
         description: "Limit price this % below the last trade"
         default: "10"
+      fill:
+        description: "Really FILL 1 share (market hours only), hold 60s, then close it"
+        type: boolean
+        default: false
       keep_open:
         description: "Leave the order open instead of cancelling (expires at the close)"
         type: boolean
@@ -45,4 +49,5 @@ jobs:
         run: |
           ARGS="--symbol ${{ inputs.symbol }} --below-pct ${{ inputs.below_pct }}"
           [ "${{ inputs.keep_open }}" = "true" ] && ARGS="$ARGS --keep-open"
+          [ "${{ inputs.fill }}" = "true" ] && ARGS="$ARGS --fill"
           python -m ictbot test-order $ARGS

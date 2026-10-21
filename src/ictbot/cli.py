@@ -163,8 +163,9 @@ def cmd_backtest(args: argparse.Namespace) -> int:
 
 
 def cmd_test_order(args: argparse.Namespace) -> int:
-    """Plumbing test: place ONE 1-share bracket order priced far below the
-    market (it should not fill), confirm Alpaca accepted it, then cancel it.
+    """Plumbing test with ONE share. Default: a bracket priced far below the
+    market (should not fill), then cancelled. --fill: a marketable bracket
+    that fills during market hours, is held briefly, then closed at market.
     Deliberately bypasses the strategy; it still carries a stop and target."""
     import os
 
@@ -176,21 +177,60 @@ def cmd_test_order(args: argparse.Namespace) -> int:
     cfg = _cfg(args)
     broker, data = _clients(cfg)
     sym = args.symbol
+    gh = os.environ.get("GITHUB_ACTIONS") == "true"
+
+    def notice(msg: str) -> None:
+        log.info(msg)
+        if gh:
+            print(f"::notice title=ictbot test order::{msg}", flush=True)
+
     last = data.latest_trade_price(sym)
     if not last:
         raise ValueError(f"no recent price for {sym}")
     tick = cfg.execution.tick_size
-    entry = round_to_tick(last * (1 - args.below_pct / 100), tick, "down")
-    stop = round_to_tick(entry * 0.99, tick, "down")
-    target = round_to_tick(entry * 1.02, tick, "up")
+    if args.fill:
+        if not broker.clock().is_open:
+            raise ValueError("market is closed - a filling test order needs regular trading hours")
+        if any(p.symbol == sym for p in broker.positions()) or any(o.symbol == sym for o in broker.orders("open")):
+            raise ValueError(f"{sym} already has a position or open order - refusing so the test cannot touch the bot's trades")
+        q = data.latest_quote(sym)
+        ref = q.ask if q else last
+        entry = round_to_tick(ref * 1.001, tick, "up")  # marketable limit: fills now, caps slippage at ~0.1%
+        stop = round_to_tick(entry * 0.995, tick, "down")
+        target = round_to_tick(entry * 1.005, tick, "up")
+    else:
+        entry = round_to_tick(last * (1 - args.below_pct / 100), tick, "down")
+        stop = round_to_tick(entry * 0.99, tick, "down")
+        target = round_to_tick(entry * 1.02, tick, "up")
     assert_order_invariants(Direction.LONG, 1, entry, stop, target)
     stamp = now_ny().strftime("%H%M%S")
     coid = make_client_order_id("icbtest", now_ny().date(), sym, f"t{stamp}", "e")
     o = broker.submit_bracket(symbol=sym, side="buy", qty=1, limit_price=entry, take_profit=target, stop_loss=stop, tif="day", client_order_id=coid)
-    msg = f"TEST ORDER accepted: {sym} BUY 1 @ {entry} (last {last}) stop {stop} target {target} status={o.status} legs={len(o.legs)} id={o.id}"
-    log.info(msg)
-    if os.environ.get("GITHUB_ACTIONS") == "true":
-        print(f"::notice title=ictbot test order::{msg}", flush=True)
+    notice(f"TEST ORDER accepted: {sym} BUY 1 limit {entry} (last {last}) stop {stop} target {target} status={o.status} legs={len(o.legs)}")
+    if args.fill:
+        deadline = time.monotonic() + 60
+        cur = o
+        while time.monotonic() < deadline:
+            cur = broker.order_by_client_id(coid)
+            if cur and cur.status == "filled":
+                break
+            time.sleep(2)
+        if not cur or cur.status != "filled":
+            broker.cancel(o.id)
+            notice(f"TEST ORDER did not fill within 60s (status={cur.status if cur else 'unknown'}) - cancelled")
+            return 1
+        notice(f"TEST ORDER FILLED: bought 1 {sym} @ {cur.filled_avg_price} - stop and target legs active")
+        time.sleep(args.hold_seconds)
+        from .execution import ExecutionEngine
+
+        ExecutionEngine(broker, cfg, sleep=time.sleep).flatten_all(now_ny().date(), "test_order_close", {sym})
+        time.sleep(5)
+        flats = [x for x in broker.orders("all", after=now_ny() - dt.timedelta(minutes=10)) if x.symbol == sym and x.side == "sell" and x.type == "market"]
+        exit_px = flats[-1].filled_avg_price if flats else None
+        pnl = (exit_px - cur.filled_avg_price) if exit_px else None
+        left = [p for p in broker.positions() if p.symbol == sym]
+        notice(f"TEST ORDER CLOSED: sold 1 {sym} @ {exit_px} | P&L {pnl if pnl is None else round(pnl, 2)} | position left: {'NONE' if not left else left[0].qty}")
+        return 0
     if args.keep_open:
         log.info("keep_open set - order left working (DAY order, expires at the close if unfilled)")
         return 0
@@ -245,6 +285,8 @@ def build_parser() -> argparse.ArgumentParser:
     t.add_argument("--below-pct", type=float, default=10.0)
     t.add_argument("--cancel-after", type=int, default=120)
     t.add_argument("--keep-open", action="store_true")
+    t.add_argument("--fill", action="store_true", help="really fill 1 share during market hours, then close it")
+    t.add_argument("--hold-seconds", type=int, default=60)
     return p
 
 
