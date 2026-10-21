@@ -1,0 +1,3 @@
+16:53:57 INFO    ictbot.research.data: downloaded {"symbol": "TNA", "minutes": 30, "feed": "sip", "adjustment": "all", "start": "2016-01-01", "end": "2026-10-20", "rows": 80581, "sha256": "b7c7a93ec222ae4342f7e9f39cb287a3867abf5c076e7d620aba246f066ff094", "first": "2016-01-04 04:00:00-05:00", "last": "2026-10-20 19:30:00-04:00"}
+16:55:04 INFO    ictbot.research.data: downloaded {"symbol": "UDOW", "minutes": 30, "feed": "sip", "adjustment": "all", "start": "2016-01-01", "end": "2026-10-20", "rows": 69159, "sha256": "5ae3082ff50c758df053df965e725f16ed7f2bb3e0e0067a554829425d95b616", "first": "2016-01-04 04:00:00-05:00", "last": "2026-10-20 19:30:00-04:00"}
+test access #1 written under research_results/test

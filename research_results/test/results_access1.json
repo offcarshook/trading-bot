@@ -17,352 +17,206 @@
  "access_number": 1,
  "candidates": [
   {
-   "strategy": "leveraged_trend",
+   "strategy": "degen_meanrev_letf",
    "params": {
-    "lev": "QLD",
-    "sma": 150,
-    "filter": "band2",
-    "defensive": "IEF"
-   },
-   "test": {
-    "days": 703,
-    "start": "2024-01-02",
-    "end": "2026-10-20",
-    "total_return": 0.7280440895339357,
-    "cagr": 0.2166195354925331,
-    "monthly_geo_mean": 0.016218054411871075,
-    "monthly_arith_mean": 0.0192823248001845,
-    "pct_positive_months": 0.5882352941176471,
-    "best_month": 0.2150179078671115,
-    "worst_month": -0.13511837072262978,
-    "ann_vol": 0.3394806200903383,
-    "sharpe": 0.7481308023315195,
-    "sortino": 1.0486791592478362,
-    "max_drawdown": 0.30738496981576924,
-    "calmar": 0.7047173959818651,
-    "psr_0": 0.8920123121108009,
-    "t_stat_mean": 1.2495537096478,
-    "skew": -0.3513854018540347,
-    "excess_kurtosis": 1.4090138145802547,
-    "hit_rate_days": 0.5534950071326676,
-    "avg_gross_exposure": 1.0,
-    "time_in_market": 1.0,
-    "annual_turnover": 4.301564722617354,
-    "annual_cost_drag": 0.0012427220483641538,
-    "n_trades": 39
-   },
-   "test_cost_stress_2x": {
-    "days": 703,
-    "start": "2024-01-02",
-    "end": "2026-10-20",
-    "total_return": 0.7220584998283837,
-    "cagr": 0.21510724470011677,
-    "monthly_geo_mean": 0.016114351441699926,
-    "monthly_arith_mean": 0.019184163248564513,
-    "pct_positive_months": 0.5882352941176471,
-    "best_month": 0.2150179078671115,
-    "worst_month": -0.13511837072262978,
-    "ann_vol": 0.3394834584381759,
-    "sharpe": 0.7444604804574344,
-    "sortino": 1.0434336427815856,
-    "max_drawdown": 0.3081855869760679,
-    "calmar": 0.697979573966322,
-    "psr_0": 0.8908954463305936,
-    "t_stat_mean": 1.243423412246501,
-    "skew": -0.3509290370530069,
-    "excess_kurtosis": 1.4084195538126636,
-    "hit_rate_days": 0.5534950071326676
-   },
-   "leverage_on_test": {
-    "kelly_leverage": 1.596360536498322,
-    "growth_optimal_leverage_hist": 1.5,
-    "max_monthly_geo_any_leverage": 0.01782580669511602,
-    "targets": {
-     "5%": {
-      "reachable_historically": false,
-      "note": "no leverage up to 20x reaches this in-sample (volatility drag dominates)"
-     },
-     "8%": {
-      "reachable_historically": false,
-      "note": "no leverage up to 20x reaches this in-sample (volatility drag dominates)"
-     }
-    },
-    "table": [
-     {
-      "leverage": 1.0,
-      "monthly_geo": 0.016218054411871075,
-      "max_dd": 0.30738496981576924,
-      "ruined": false
-     },
-     {
-      "leverage": 2.0,
-      "monthly_geo": 0.016957914014644082,
-      "max_dd": 0.5449615475677688,
-      "ruined": false
-     },
-     {
-      "leverage": 3.0,
-      "monthly_geo": 0.007667118935034578,
-      "max_dd": 0.7317152392108892,
-      "ruined": false
-     },
-     {
-      "leverage": 4.0,
-      "monthly_geo": -0.011818341307510694,
-      "max_dd": 0.8665858419176877,
-      "ruined": false
-     },
-     {
-      "leverage": 5.0,
-      "monthly_geo": -0.04152254311144621,
-      "max_dd": 0.9524609437940392,
-      "ruined": false
-     },
-     {
-      "leverage": 8.0,
-      "monthly_geo": -0.19101213849597953,
-      "max_dd": 0.9998538063730571,
-      "ruined": true
-     },
-     {
-      "leverage": 10.0,
-      "monthly_geo": -0.34989100750219015,
-      "max_dd": 0.9999998899420302,
-      "ruined": true
-     },
-     {
-      "leverage": 15.0,
-      "monthly_geo": -0.711028543819188,
-      "max_dd": 1.0014238694350506,
-      "ruined": true
-     },
-     {
-      "leverage": 20.0,
-      "monthly_geo": -0.8670869643017698,
-      "max_dd": 1.0003362473310966,
-      "ruined": true
-     }
-    ]
-   },
-   "bootstrap_1y": {
-    "horizon_days": 252,
-    "annual_return_p05": -0.23738015233755347,
-    "annual_return_p50": 0.20997877472801485,
-    "annual_return_p95": 0.8551652665690728,
-    "prob_loss_year": 0.246,
-    "max_dd_p50": 0.24225278912964004,
-    "max_dd_p95": 0.4152843732546638,
-    "prob_dd_over_30": 0.271,
-    "prob_dd_over_50": 0.011
-   }
-  },
-  {
-   "strategy": "meanrev_regime",
-   "params": {
-    "signal": "ibs",
+    "margin": 1.95,
+    "alloc": "concentrate",
     "threshold": "strict",
-    "exit_rule": "rsi2",
-    "max_hold": 5,
-    "vol_filter": true,
-    "allow_short": false,
-    "gross": 1.0,
-    "band": 0.02
+    "vol_filter": true
    },
    "test": {
     "days": 703,
     "start": "2024-01-02",
     "end": "2026-10-20",
-    "total_return": 0.1286245596689386,
-    "cagr": 0.04432839952811651,
-    "monthly_geo_mean": 0.0035651544367460986,
-    "monthly_arith_mean": 0.0036053238328258835,
-    "pct_positive_months": 0.6176470588235294,
-    "best_month": 0.03475862559725895,
-    "worst_month": -0.013772932575499719,
-    "ann_vol": 0.04188889492761457,
-    "sharpe": 1.0564260581668978,
-    "sortino": 1.6576440565011035,
-    "max_drawdown": 0.03148508526293359,
-    "calmar": 1.407917404635488,
-    "psr_0": 0.963461798656398,
-    "t_stat_mean": 1.7644790133451698,
-    "skew": 0.7829883230341521,
-    "excess_kurtosis": 15.943418618189106,
+    "total_return": 0.19787180867138443,
+    "cagr": 0.06685958690709737,
+    "monthly_geo_mean": 0.005324314921167472,
+    "monthly_arith_mean": 0.010682032478335494,
+    "pct_positive_months": 0.5294117647058824,
+    "best_month": 0.27533196412315797,
+    "worst_month": -0.20797929706641316,
+    "ann_vol": 0.4811884049125075,
+    "sharpe": 0.3773270068733892,
+    "sortino": 0.5252385453482089,
+    "max_drawdown": 0.4006416878009713,
+    "calmar": 0.16688125310691962,
+    "psr_0": 0.7345935066260825,
+    "t_stat_mean": 0.6302245004744673,
+    "skew": -0.35475582480958695,
+    "excess_kurtosis": 6.479293135744419,
     "hit_rate_days": 0.5656565656565656,
-    "avg_gross_exposure": 0.15050055221748923,
+    "avg_gross_exposure": 0.6545022122200355,
     "time_in_market": 0.3357041251778094,
-    "annual_turnover": 25.276740794452635,
-    "annual_cost_drag": 0.004806632609674021,
-    "n_trades": 952
+    "annual_turnover": 122.90837094615837,
+    "annual_cost_drag": 0.06699391942170338,
+    "n_trades": 1442
    },
    "test_cost_stress_2x": {
     "days": 703,
     "start": "2024-01-02",
     "end": "2026-10-20",
-    "total_return": 0.11358994004387335,
-    "cagr": 0.03932009609365017,
-    "monthly_geo_mean": 0.003169393612388438,
-    "monthly_arith_mean": 0.0032093398317222634,
+    "total_return": 0.05732753641087207,
+    "cagr": 0.020183377371476796,
+    "monthly_geo_mean": 0.0016408898624595825,
+    "monthly_arith_mean": 0.0070287291589892316,
+    "pct_positive_months": 0.5294117647058824,
+    "best_month": 0.2737700046503784,
+    "worst_month": -0.21319398374472176,
+    "ann_vol": 0.4807543800281198,
+    "sharpe": 0.28427168253090207,
+    "sortino": 0.3935253874564569,
+    "max_drawdown": 0.40696650831776127,
+    "calmar": 0.04959468889689941,
+    "psr_0": 0.6818001542850696,
+    "t_stat_mean": 0.47480030811096696,
+    "skew": -0.3701257906437917,
+    "excess_kurtosis": 6.464036593954889,
+    "hit_rate_days": 0.5622895622895623
+   },
+   "leverage_on_test": {
+    "kelly_leverage": 0.5862869844465834,
+    "growth_optimal_leverage_hist": 0.5,
+    "max_monthly_geo_any_leverage": 0.005079446619057126,
+    "targets": {
+     "5%": {
+      "reachable_historically": false,
+      "note": "no leverage up to 20x reaches this in-sample (volatility drag dominates)"
+     },
+     "8%": {
+      "reachable_historically": false,
+      "note": "no leverage up to 20x reaches this in-sample (volatility drag dominates)"
+     }
+    },
+    "table": [
+     {
+      "leverage": 1.0,
+      "monthly_geo": 0.0034811173936102335,
+      "max_dd": 0.4045018271297516,
+      "ruined": false
+     },
+     {
+      "leverage": 2.0,
+      "monthly_geo": -0.014841144953423813,
+      "max_dd": 0.746970269044234,
+      "ruined": false
+     },
+     {
+      "leverage": 3.0,
+      "monthly_geo": -0.054081264256661155,
+      "max_dd": 0.9403958261499503,
+      "ruined": false
+     },
+     {
+      "leverage": 4.0,
+      "monthly_geo": -0.11576730655338385,
+      "max_dd": 0.9949432259370693,
+      "ruined": true
+     },
+     {
+      "leverage": 5.0,
+      "monthly_geo": -0.20411986986139885,
+      "max_dd": 0.9998806023914741,
+      "ruined": true
+     },
+     {
+      "leverage": 8.0,
+      "monthly_geo": -1.0,
+      "max_dd": 1.0828702676676893,
+      "ruined": true
+     },
+     {
+      "leverage": 10.0,
+      "monthly_geo": -0.698916501619235,
+      "max_dd": 1.0294909315035863,
+      "ruined": true
+     },
+     {
+      "leverage": 15.0,
+      "monthly_geo": -0.6968735184676089,
+      "max_dd": 1.0573248867009513,
+      "ruined": true
+     },
+     {
+      "leverage": 20.0,
+      "monthly_geo": -0.5155021365988878,
+      "max_dd": 1.69485132690741,
+      "ruined": true
+     }
+    ]
+   },
+   "bootstrap_1y": {
+    "horizon_days": 252,
+    "annual_return_p05": -0.4422460307683365,
+    "annual_return_p50": 0.04748997710907843,
+    "annual_return_p95": 0.9966860334324396,
+    "prob_loss_year": 0.445,
+    "max_dd_p50": 0.35715210512399215,
+    "max_dd_p95": 0.5682793344152859,
+    "prob_dd_over_30": 0.727,
+    "prob_dd_over_50": 0.139
+   }
+  },
+  {
+   "strategy": "degen_meanrev_letf",
+   "params": {
+    "margin": 1.95,
+    "alloc": "equal_slots",
+    "threshold": "strict",
+    "vol_filter": true
+   },
+   "test": {
+    "days": 703,
+    "start": "2024-01-02",
+    "end": "2026-10-20",
+    "total_return": 0.7627551649800104,
+    "cagr": 0.22532388825413596,
+    "monthly_geo_mean": 0.01681265114367614,
+    "monthly_arith_mean": 0.01821620520480338,
     "pct_positive_months": 0.5882352941176471,
-    "best_month": 0.03447624854701736,
-    "worst_month": -0.014305769598318974,
-    "ann_vol": 0.0418201356890884,
-    "sharpe": 0.9431270430566319,
-    "sortino": 1.4665113055460182,
-    "max_drawdown": 0.03180221120752502,
-    "calmar": 1.236395036718273,
-    "psr_0": 0.9448393325587747,
-    "t_stat_mean": 1.5752431147706585,
-    "skew": 0.7392576203873034,
-    "excess_kurtosis": 15.880664940536036,
-    "hit_rate_days": 0.5488215488215489
-   },
-   "leverage_on_test": {
-    "kelly_leverage": 19.215749168612366,
-    "growth_optimal_leverage_hist": 19.25,
-    "max_monthly_geo_any_leverage": 0.02925202572540564,
-    "targets": {
-     "5%": {
-      "reachable_historically": false,
-      "note": "no leverage up to 20x reaches this in-sample (volatility drag dominates)"
-     },
-     "8%": {
-      "reachable_historically": false,
-      "note": "no leverage up to 20x reaches this in-sample (volatility drag dominates)"
-     }
-    },
-    "table": [
-     {
-      "leverage": 1.0,
-      "monthly_geo": 0.0035651463079644508,
-      "max_dd": 0.03148508526293359,
-      "ruined": false
-     },
-     {
-      "leverage": 2.0,
-      "monthly_geo": 0.006700462168767407,
-      "max_dd": 0.06253500583535221,
-      "ruined": false
-     },
-     {
-      "leverage": 3.0,
-      "monthly_geo": 0.009379275049052449,
-      "max_dd": 0.09326849170397333,
-      "ruined": false
-     },
-     {
-      "leverage": 4.0,
-      "monthly_geo": 0.011920736843477941,
-      "max_dd": 0.12329093708700023,
-      "ruined": false
-     },
-     {
-      "leverage": 5.0,
-      "monthly_geo": 0.01408048159801134,
-      "max_dd": 0.15330731297213496,
-      "ruined": false
-     },
-     {
-      "leverage": 8.0,
-      "monthly_geo": 0.01971039956720544,
-      "max_dd": 0.24189512110356992,
-      "ruined": false
-     },
-     {
-      "leverage": 10.0,
-      "monthly_geo": 0.022758098315981856,
-      "max_dd": 0.29778449303175025,
-      "ruined": false
-     },
-     {
-      "leverage": 15.0,
-      "monthly_geo": 0.027849752243530146,
-      "max_dd": 0.4262950633857133,
-      "ruined": false
-     },
-     {
-      "leverage": 20.0,
-      "monthly_geo": 0.02921200215669617,
-      "max_dd": 0.5388410237634205,
-      "ruined": false
-     }
-    ]
-   },
-   "bootstrap_1y": {
-    "horizon_days": 252,
-    "annual_return_p05": -0.01230422724334287,
-    "annual_return_p50": 0.043112216143909254,
-    "annual_return_p95": 0.10675737286876946,
-    "prob_loss_year": 0.109,
-    "max_dd_p50": 0.030371116253149477,
-    "max_dd_p95": 0.050368035224075465,
-    "prob_dd_over_30": 0.0,
-    "prob_dd_over_50": 0.0
-   }
-  },
-  {
-   "strategy": "regime_allocation",
-   "params": {
-    "trend_sma": 100,
-    "bond_sma": 50,
-    "vol_filter": true,
-    "alloc_map": "defensive",
-    "min_hold": 5,
-    "band": 0.05
-   },
-   "test": {
-    "days": 703,
-    "start": "2024-01-02",
-    "end": "2026-10-20",
-    "total_return": 0.21200963275015883,
-    "cagr": 0.0713562255773843,
-    "monthly_geo_mean": 0.005671310613259095,
-    "monthly_arith_mean": 0.005856793529394196,
-    "pct_positive_months": 0.6470588235294118,
-    "best_month": 0.037031065505772176,
-    "worst_month": -0.041119509489432104,
-    "ann_vol": 0.07477232893056227,
-    "sharpe": 0.9593145425828884,
-    "sortino": 1.3476391394269274,
-    "max_drawdown": 0.0686262614575136,
-    "calmar": 1.0397801666867839,
-    "psr_0": 0.9422264936926087,
-    "t_stat_mean": 1.6022800313364767,
-    "skew": -0.5252939992147533,
-    "excess_kurtosis": 1.6992993627106419,
-    "hit_rate_days": 0.5320056899004267,
-    "avg_gross_exposure": 1.0,
-    "time_in_market": 1.0,
-    "annual_turnover": 10.399992918789103,
-    "annual_cost_drag": 0.002043221456597032,
-    "n_trades": 416
+    "best_month": 0.2068129059266266,
+    "worst_month": -0.08307841030874352,
+    "ann_vol": 0.24285982648303425,
+    "sharpe": 0.9576206945178584,
+    "sortino": 1.482252302136129,
+    "max_drawdown": 0.17507623095209823,
+    "calmar": 1.2870044495976485,
+    "psr_0": 0.9471915343672545,
+    "t_stat_mean": 1.5994509082384276,
+    "skew": 0.6739713785178089,
+    "excess_kurtosis": 15.822643163332337,
+    "hit_rate_days": 0.5589225589225589,
+    "avg_gross_exposure": 0.293420676855712,
+    "time_in_market": 0.3357041251778094,
+    "annual_turnover": 49.325005466691344,
+    "annual_cost_drag": 0.020957718187463545,
+    "n_trades": 1030
    },
    "test_cost_stress_2x": {
     "days": 703,
     "start": "2024-01-02",
     "end": "2026-10-20",
-    "total_return": 0.20511900170550512,
-    "cagr": 0.06916883774681515,
-    "monthly_geo_mean": 0.005502682051482299,
-    "monthly_arith_mean": 0.005689709724032092,
-    "pct_positive_months": 0.6470588235294118,
-    "best_month": 0.037031065505772176,
-    "worst_month": -0.041508955345057386,
-    "ann_vol": 0.07477750320617008,
-    "sharpe": 0.9319144958811639,
-    "sortino": 1.3077892754785136,
-    "max_drawdown": 0.06947142644988125,
-    "calmar": 0.9956444149986701,
-    "psr_0": 0.9369523319286572,
-    "t_stat_mean": 1.5565155341469987,
-    "skew": -0.5235341611848484,
-    "excess_kurtosis": 1.6954557263331003,
-    "hit_rate_days": 0.5305832147937412
+    "total_return": 0.6784974770090739,
+    "cagr": 0.20399840000998037,
+    "monthly_geo_mean": 0.015348927687472091,
+    "monthly_arith_mean": 0.016747255915762732,
+    "pct_positive_months": 0.5588235294117647,
+    "best_month": 0.20567295136111352,
+    "worst_month": -0.08484834375839878,
+    "ann_vol": 0.2425637718192675,
+    "sharpe": 0.8860993422767921,
+    "sortino": 1.3639014738321487,
+    "max_drawdown": 0.17665518847119688,
+    "calmar": 1.154782951892985,
+    "psr_0": 0.9326320974983378,
+    "t_stat_mean": 1.4799934941962118,
+    "skew": 0.6471309104200922,
+    "excess_kurtosis": 15.789987047747626,
+    "hit_rate_days": 0.5521885521885522
    },
    "leverage_on_test": {
-    "kelly_leverage": 0.30946397944189313,
-    "growth_optimal_leverage_hist": 1.0,
-    "max_monthly_geo_any_leverage": 0.005671310613259095,
+    "kelly_leverage": 3.5948614747060197,
+    "growth_optimal_leverage_hist": 3.5,
+    "max_monthly_geo_any_leverage": 0.03386489661912462,
     "targets": {
      "5%": {
       "reachable_historically": false,
@@ -376,135 +230,301 @@
     "table": [
      {
       "leverage": 1.0,
-      "monthly_geo": 0.005671310613259095,
-      "max_dd": 0.0686262614575136,
+      "monthly_geo": 0.01653184924708384,
+      "max_dd": 0.17529863013387725,
       "ruined": false
      },
      {
       "leverage": 2.0,
-      "monthly_geo": 0.005120739871568913,
-      "max_dd": 0.15934216979326776,
+      "monthly_geo": 0.027468037969817782,
+      "max_dd": 0.33333018521998625,
       "ruined": false
      },
      {
       "leverage": 3.0,
-      "monthly_geo": 0.00410553594648988,
-      "max_dd": 0.24413745425168154,
+      "monthly_geo": 0.033025718066948206,
+      "max_dd": 0.47348468561579904,
       "ruined": false
      },
      {
       "leverage": 4.0,
-      "monthly_geo": 0.0026241005608418355,
-      "max_dd": 0.3263121508058817,
+      "monthly_geo": 0.03336858106858731,
+      "max_dd": 0.593536156470794,
       "ruined": false
      },
      {
       "leverage": 5.0,
-      "monthly_geo": 0.0006751732977199332,
-      "max_dd": 0.41099894651987834,
+      "monthly_geo": 0.028173036076950098,
+      "max_dd": 0.6940164631184347,
       "ruined": false
      },
      {
       "leverage": 8.0,
-      "monthly_geo": -0.007984188518957325,
-      "max_dd": 0.6435782740607319,
+      "monthly_geo": -0.02678238492966467,
+      "max_dd": 0.9693008453100987,
       "ruined": false
      },
      {
       "leverage": 10.0,
-      "monthly_geo": -0.016102915178121013,
-      "max_dd": 0.7572903644434831,
-      "ruined": false
+      "monthly_geo": -0.11320906136385545,
+      "max_dd": 0.9990800789783166,
+      "ruined": true
      },
      {
       "leverage": 15.0,
-      "monthly_geo": -0.044574024283832725,
-      "max_dd": 0.9225621722250139,
-      "ruined": false
+      "monthly_geo": -1.0,
+      "max_dd": 1.350720257919422,
+      "ruined": true
      },
      {
       "leverage": 20.0,
-      "monthly_geo": -0.08456929653317813,
-      "max_dd": 0.9813353365952314,
+      "monthly_geo": -0.3630938849214971,
+      "max_dd": 1.7243780654515957,
       "ruined": true
      }
     ]
    },
    "bootstrap_1y": {
     "horizon_days": 252,
-    "annual_return_p05": -0.034063376041657885,
-    "annual_return_p50": 0.07393676095743407,
-    "annual_return_p95": 0.17984533660822902,
-    "prob_loss_year": 0.131,
-    "max_dd_p50": 0.05364648726410165,
-    "max_dd_p95": 0.09738778988289967,
-    "prob_dd_over_30": 0.0,
+    "annual_return_p05": -0.11652023926151271,
+    "annual_return_p50": 0.22085854526038884,
+    "annual_return_p95": 0.7119958915005719,
+    "prob_loss_year": 0.152,
+    "max_dd_p50": 0.17257695894922587,
+    "max_dd_p95": 0.28283879578088106,
+    "prob_dd_over_30": 0.029,
     "prob_dd_over_50": 0.0
    }
   },
   {
-   "strategy": "xsmom_sector_rotation",
+   "strategy": "degen_trend_letf",
    "params": {
-    "lookback": "blend_1_3_6_12",
-    "top_n": 4,
-    "rebalance": "W",
-    "abs_filter": false,
-    "market_filter": true,
-    "band": 0.01
+    "lev": "TQQQ",
+    "sma": 150,
+    "margin": 1.95
    },
    "test": {
     "days": 703,
     "start": "2024-01-02",
     "end": "2026-10-20",
-    "total_return": 0.4085960885701654,
-    "cagr": 0.13066657966848183,
-    "monthly_geo_mean": 0.010127216842791942,
-    "monthly_arith_mean": 0.010597277995264076,
-    "pct_positive_months": 0.6470588235294118,
-    "best_month": 0.08132152925851566,
-    "worst_month": -0.053020406924781716,
-    "ann_vol": 0.11590214032106001,
-    "sharpe": 1.117736633885047,
-    "sortino": 1.621238160123345,
-    "max_drawdown": 0.0879737915835932,
-    "calmar": 1.4852898495834603,
-    "psr_0": 0.9677013226629197,
-    "t_stat_mean": 1.8668820384451934,
-    "skew": -0.19167609360012602,
-    "excess_kurtosis": 2.480901513966012,
-    "hit_rate_days": 0.5514285714285714,
-    "avg_gross_exposure": 1.0016075288807098,
-    "time_in_market": 1.0,
-    "annual_turnover": 15.09020419046534,
-    "annual_cost_drag": 0.004141627270736101,
-    "n_trades": 589
+    "total_return": 0.4622957713087261,
+    "cagr": 0.14593277650286773,
+    "monthly_geo_mean": 0.011239388103589043,
+    "monthly_arith_mean": 0.03942030244203716,
+    "pct_positive_months": 0.5294117647058824,
+    "best_month": 0.717254432324731,
+    "worst_month": -0.377183039562918,
+    "ann_vol": 0.9994322028347855,
+    "sharpe": 0.6447444010745607,
+    "sortino": 0.9039455558083077,
+    "max_drawdown": 0.7059251886236486,
+    "calmar": 0.20672555513622448,
+    "psr_0": 0.8573675739400606,
+    "t_stat_mean": 1.0768741985046106,
+    "skew": -0.31381599331836674,
+    "excess_kurtosis": 1.4396747215284007,
+    "hit_rate_days": 0.5566037735849056,
+    "avg_gross_exposure": 1.7556169106469108,
+    "time_in_market": 0.9004267425320057,
+    "annual_turnover": 14.414559840392082,
+    "annual_cost_drag": 0.06367201054680699,
+    "n_trades": 1477
    },
    "test_cost_stress_2x": {
     "days": 703,
     "start": "2024-01-02",
     "end": "2026-10-20",
-    "total_return": 0.3933394263805696,
-    "cagr": 0.1262613552020566,
-    "monthly_geo_mean": 0.009803725034578381,
-    "monthly_arith_mean": 0.010275729855190163,
-    "pct_positive_months": 0.6176470588235294,
-    "best_month": 0.08104105023619734,
-    "worst_month": -0.053931298802079364,
-    "ann_vol": 0.11591827455987823,
-    "sharpe": 1.0839044510573206,
-    "sortino": 1.5704395907521305,
-    "max_drawdown": 0.08909555166273797,
-    "calmar": 1.417145444926431,
-    "psr_0": 0.9635077778943916,
-    "t_stat_mean": 1.8103743670244747,
-    "skew": -0.18878626357510955,
-    "excess_kurtosis": 2.474817678867124,
-    "hit_rate_days": 0.55
+    "total_return": 0.446833701245676,
+    "cagr": 0.14157448927372585,
+    "monthly_geo_mean": 0.010923272566112363,
+    "monthly_arith_mean": 0.03911794200497311,
+    "pct_positive_months": 0.5294117647058824,
+    "best_month": 0.7168965823251168,
+    "worst_month": -0.37737523310635646,
+    "ann_vol": 0.9994393102137544,
+    "sharpe": 0.6409438440385808,
+    "sortino": 0.8984533840736671,
+    "max_drawdown": 0.7065107104682832,
+    "calmar": 0.2003854820260102,
+    "psr_0": 0.8559531471855678,
+    "t_stat_mean": 1.0705263778718594,
+    "skew": -0.3139741053732566,
+    "excess_kurtosis": 1.4398048475462106,
+    "hit_rate_days": 0.5566037735849056
    },
    "leverage_on_test": {
-    "kelly_leverage": 4.424490931812624,
-    "growth_optimal_leverage_hist": 4.5,
-    "max_monthly_geo_any_leverage": 0.016612850389630562,
+    "kelly_leverage": 0.522077833599374,
+    "growth_optimal_leverage_hist": 19.75,
+    "max_monthly_geo_any_leverage": 0.2833006920190806,
+    "targets": {
+     "5%": {
+      "reachable_historically": true,
+      "leverage_needed": 19.75,
+      "hist_max_dd": 9.416601126589352,
+      "vs_kelly": 37.8296084011786,
+      "bootstrap_1y": {
+       "horizon_days": 252,
+       "annual_return_p05": -119372300.79878515,
+       "annual_return_p50": -1.0000000003442617,
+       "annual_return_p95": 159660599.67777228,
+       "prob_loss_year": 0.722,
+       "max_dd_p50": 9.187012734081936,
+       "max_dd_p95": 158.97139627836938,
+       "prob_dd_over_30": 1.0,
+       "prob_dd_over_50": 1.0
+      },
+      "max_gross_exposure_needed": 38.9026767622907,
+      "broker_feasible_overnight_2x": false
+     },
+     "8%": {
+      "reachable_historically": true,
+      "leverage_needed": 19.75,
+      "hist_max_dd": 9.416601126589352,
+      "vs_kelly": 37.8296084011786,
+      "bootstrap_1y": {
+       "horizon_days": 252,
+       "annual_return_p05": -119372300.79878515,
+       "annual_return_p50": -1.0000000003442617,
+       "annual_return_p95": 159660599.67777228,
+       "prob_loss_year": 0.722,
+       "max_dd_p50": 9.187012734081936,
+       "max_dd_p95": 158.97139627836938,
+       "prob_dd_over_30": 1.0,
+       "prob_dd_over_50": 1.0
+      },
+      "max_gross_exposure_needed": 38.9026767622907,
+      "broker_feasible_overnight_2x": false
+     }
+    },
+    "table": [
+     {
+      "leverage": 1.0,
+      "monthly_geo": 0.006275654557296839,
+      "max_dd": 0.718012034005871,
+      "ruined": false
+     },
+     {
+      "leverage": 2.0,
+      "monthly_geo": -0.07947225387434653,
+      "max_dd": 0.9878466750344086,
+      "ruined": true
+     },
+     {
+      "leverage": 3.0,
+      "monthly_geo": -0.2502066675498641,
+      "max_dd": 0.9999860527855826,
+      "ruined": true
+     },
+     {
+      "leverage": 4.0,
+      "monthly_geo": -1.0,
+      "max_dd": 1.0000000391996922,
+      "ruined": true
+     },
+     {
+      "leverage": 5.0,
+      "monthly_geo": -1.0,
+      "max_dd": 1.0006744455779093,
+      "ruined": true
+     },
+     {
+      "leverage": 8.0,
+      "monthly_geo": -1.0,
+      "max_dd": 1.0000018450028139,
+      "ruined": true
+     },
+     {
+      "leverage": 10.0,
+      "monthly_geo": -1.0,
+      "max_dd": 1.6033046946510074,
+      "ruined": true
+     },
+     {
+      "leverage": 15.0,
+      "monthly_geo": -1.0,
+      "max_dd": 1.610775013132113,
+      "ruined": true
+     },
+     {
+      "leverage": 20.0,
+      "monthly_geo": -1.0,
+      "max_dd": 17.24388838810133,
+      "ruined": true
+     }
+    ]
+   },
+   "bootstrap_1y": {
+    "horizon_days": 252,
+    "annual_return_p05": -0.719798802792431,
+    "annual_return_p50": 0.13776228705338056,
+    "annual_return_p95": 3.128908723322225,
+    "prob_loss_year": 0.434,
+    "max_dd_p50": 0.6201272451299054,
+    "max_dd_p95": 0.8460917589837605,
+    "prob_dd_over_30": 0.995,
+    "prob_dd_over_50": 0.772
+   }
+  },
+  {
+   "strategy": "degen_trend_letf",
+   "params": {
+    "lev": "TQQQ",
+    "sma": 150,
+    "margin": 1.0
+   },
+   "test": {
+    "days": 703,
+    "start": "2024-01-02",
+    "end": "2026-10-20",
+    "total_return": 0.9059277720764298,
+    "cagr": 0.26010866463566606,
+    "monthly_geo_mean": 0.01915074118811977,
+    "monthly_arith_mean": 0.02610423777627887,
+    "pct_positive_months": 0.5588235294117647,
+    "best_month": 0.3318570072761782,
+    "worst_month": -0.2021039603960395,
+    "ann_vol": 0.5076565248348467,
+    "sharpe": 0.7111721781802682,
+    "sortino": 0.9953292190779416,
+    "max_drawdown": 0.43278463005032786,
+    "calmar": 0.6010117887167538,
+    "psr_0": 0.8803343517651947,
+    "t_stat_mean": 1.1878241487638597,
+    "skew": -0.354584091726967,
+    "excess_kurtosis": 1.450776079215605,
+    "hit_rate_days": 0.5581761006289309,
+    "avg_gross_exposure": 0.9004267425320057,
+    "time_in_market": 0.9004267425320057,
+    "annual_turnover": 2.150782361308677,
+    "annual_cost_drag": 0.0005675914651493599,
+    "n_trades": 19
+   },
+   "test_cost_stress_2x": {
+    "days": 703,
+    "start": "2024-01-02",
+    "end": "2026-10-20",
+    "total_return": 0.9029111174835078,
+    "cagr": 0.2593933567883244,
+    "monthly_geo_mean": 0.01910326099672588,
+    "monthly_arith_mean": 0.02606033799514179,
+    "pct_positive_months": 0.5588235294117647,
+    "best_month": 0.3318570072761782,
+    "worst_month": -0.2021039603960395,
+    "ann_vol": 0.5076521828057998,
+    "sharpe": 0.7100541387527964,
+    "sortino": 0.9937378259366727,
+    "max_drawdown": 0.43308404615428997,
+    "calmar": 0.5989446138496483,
+    "psr_0": 0.8799688804377515,
+    "t_stat_mean": 1.1859567609891868,
+    "skew": -0.3544423922627062,
+    "excess_kurtosis": 1.4507592401033875,
+    "hit_rate_days": 0.5581761006289309
+   },
+   "leverage_on_test": {
+    "kelly_leverage": 1.1563205647247805,
+    "growth_optimal_leverage_hist": 1.25,
+    "max_monthly_geo_any_leverage": 0.01923173622351193,
     "targets": {
      "5%": {
       "reachable_historically": false,
@@ -518,70 +538,350 @@
     "table": [
      {
       "leverage": 1.0,
-      "monthly_geo": 0.01010740020178491,
-      "max_dd": 0.08802327800026799,
+      "monthly_geo": 0.01915074118811977,
+      "max_dd": 0.43278463005032786,
       "ruined": false
      },
      {
       "leverage": 2.0,
-      "monthly_geo": 0.013376338419190281,
-      "max_dd": 0.18642802951281734,
+      "monthly_geo": 0.011007453616708407,
+      "max_dd": 0.7108583326710988,
       "ruined": false
      },
      {
       "leverage": 3.0,
-      "monthly_geo": 0.015519270016088438,
-      "max_dd": 0.28420909859588994,
+      "monthly_geo": -0.02005646740815248,
+      "max_dd": 0.8984540498337554,
       "ruined": false
      },
      {
       "leverage": 4.0,
-      "monthly_geo": 0.01653311887022957,
-      "max_dd": 0.376570715134925,
-      "ruined": false
+      "monthly_geo": -0.07418163185579452,
+      "max_dd": 0.986971208009654,
+      "ruined": true
      },
      {
       "leverage": 5.0,
-      "monthly_geo": 0.01640597712015479,
-      "max_dd": 0.4611757249041569,
-      "ruined": false
+      "monthly_geo": -0.15115429490055177,
+      "max_dd": 0.9993118530394339,
+      "ruined": true
      },
      {
       "leverage": 8.0,
-      "monthly_geo": 0.009084665459601071,
-      "max_dd": 0.6685072014570864,
-      "ruined": false
+      "monthly_geo": -1.0,
+      "max_dd": 1.000000066819842,
+      "ruined": true
      },
      {
       "leverage": 10.0,
-      "monthly_geo": -0.0016448595294835666,
-      "max_dd": 0.7702653386163335,
-      "ruined": false
+      "monthly_geo": -0.6970508788471796,
+      "max_dd": 1.0014185635693644,
+      "ruined": true
      },
      {
       "leverage": 15.0,
-      "monthly_geo": -0.04909510201448586,
-      "max_dd": 0.9590383780611998,
-      "ruined": false
+      "monthly_geo": -0.899490647078336,
+      "max_dd": 1.0000001648124834,
+      "ruined": true
      },
      {
       "leverage": 20.0,
-      "monthly_geo": -0.12607420582100493,
-      "max_dd": 0.9980423999282638,
+      "monthly_geo": -1.0,
+      "max_dd": 1.0096823627485532,
       "ruined": true
      }
     ]
    },
    "bootstrap_1y": {
     "horizon_days": 252,
-    "annual_return_p05": -0.032183314152105215,
-    "annual_return_p50": 0.1338529462856496,
-    "annual_return_p95": 0.2916329772565186,
-    "prob_loss_year": 0.091,
-    "max_dd_p50": 0.07466357874720653,
-    "max_dd_p95": 0.13150115481658234,
-    "prob_dd_over_30": 0.0,
-    "prob_dd_over_50": 0.0
+    "annual_return_p05": -0.37285102815768334,
+    "annual_return_p50": 0.2464338707003817,
+    "annual_return_p95": 1.354028336388587,
+    "prob_loss_year": 0.295,
+    "max_dd_p50": 0.3496466030089345,
+    "max_dd_p95": 0.5642628249244025,
+    "prob_dd_over_30": 0.669,
+    "prob_dd_over_50": 0.111
+   }
+  },
+  {
+   "strategy": "degen_combo",
+   "params": {
+    "trend_margin": 1.95,
+    "sma": 150,
+    "threshold": "strict",
+    "vol_filter": true
+   },
+   "test": {
+    "days": 703,
+    "start": "2024-01-02",
+    "end": "2026-10-20",
+    "total_return": -0.4689941168353887,
+    "cagr": -0.20300043877020502,
+    "monthly_geo_mean": -0.018444894715383797,
+    "monthly_arith_mean": 0.00802397328099534,
+    "pct_positive_months": 0.4117647058823529,
+    "best_month": 0.5655324851699934,
+    "worst_month": -0.32858659519020283,
+    "ann_vol": 0.9432492406537911,
+    "sharpe": 0.2376427391532706,
+    "sortino": 0.32901325208304505,
+    "max_drawdown": 0.7672849928592257,
+    "calmar": -0.2645698021718635,
+    "psr_0": 0.6539195870736882,
+    "t_stat_mean": 0.39691904858670335,
+    "skew": -0.22806856364396322,
+    "excess_kurtosis": 1.3393006605203635,
+    "hit_rate_days": 0.5390625,
+    "avg_gross_exposure": 1.7666972322345265,
+    "time_in_market": 0.9061166429587483,
+    "annual_turnover": 184.05066046309003,
+    "annual_cost_drag": 0.12106227595881856,
+    "n_trades": 2489
+   },
+   "test_cost_stress_2x": {
+    "days": 703,
+    "start": "2024-01-02",
+    "end": "2026-10-20",
+    "total_return": -0.5520063517737339,
+    "cagr": -0.2501168241501549,
+    "monthly_geo_mean": -0.023340250205901025,
+    "monthly_arith_mean": 0.0031121599212043417,
+    "pct_positive_months": 0.4117647058823529,
+    "best_month": 0.5602241789050908,
+    "worst_month": -0.3294873604643852,
+    "ann_vol": 0.942596321180398,
+    "sharpe": 0.17270824518072123,
+    "sortino": 0.23838589844498237,
+    "max_drawdown": 0.7744809784936921,
+    "calmar": -0.32294766572138867,
+    "psr_0": 0.6132821559584121,
+    "t_stat_mean": 0.28846323100154986,
+    "skew": -0.23003028410951443,
+    "excess_kurtosis": 1.334049637105326,
+    "hit_rate_days": 0.5359375
+   },
+   "leverage_on_test": {
+    "kelly_leverage": 0.11294297673185409,
+    "growth_optimal_leverage_hist": 0.5,
+    "max_monthly_geo_any_leverage": 3.113266566301398e-05,
+    "targets": {
+     "5%": {
+      "reachable_historically": false,
+      "note": "no leverage up to 20x reaches this in-sample (volatility drag dominates)"
+     },
+     "8%": {
+      "reachable_historically": false,
+      "note": "no leverage up to 20x reaches this in-sample (volatility drag dominates)"
+     }
+    },
+    "table": [
+     {
+      "leverage": 1.0,
+      "monthly_geo": -0.02329949914439533,
+      "max_dd": 0.7773814722575163,
+      "ruined": false
+     },
+     {
+      "leverage": 2.0,
+      "monthly_geo": -0.12317800381454724,
+      "max_dd": 0.9953098476433048,
+      "ruined": true
+     },
+     {
+      "leverage": 3.0,
+      "monthly_geo": -0.28473465670111653,
+      "max_dd": 0.9999947146381334,
+      "ruined": true
+     },
+     {
+      "leverage": 4.0,
+      "monthly_geo": -0.4945676809477685,
+      "max_dd": 0.999999999957329,
+      "ruined": true
+     },
+     {
+      "leverage": 5.0,
+      "monthly_geo": -1.0,
+      "max_dd": 1.0000112804110355,
+      "ruined": true
+     },
+     {
+      "leverage": 8.0,
+      "monthly_geo": -1.0,
+      "max_dd": 1.000004239510949,
+      "ruined": true
+     },
+     {
+      "leverage": 10.0,
+      "monthly_geo": -0.9759468309546988,
+      "max_dd": 1.26351352158937,
+      "ruined": true
+     },
+     {
+      "leverage": 15.0,
+      "monthly_geo": -1.0,
+      "max_dd": 1.610775013132113,
+      "ruined": true
+     },
+     {
+      "leverage": 20.0,
+      "monthly_geo": -0.22730475671371497,
+      "max_dd": 3.801147083257873,
+      "ruined": true
+     }
+    ]
+   },
+   "bootstrap_1y": {
+    "horizon_days": 252,
+    "annual_return_p05": -0.7848691499983407,
+    "annual_return_p50": -0.23509589044105517,
+    "annual_return_p95": 1.7756652157756485,
+    "prob_loss_year": 0.639,
+    "max_dd_p50": 0.6581281786242105,
+    "max_dd_p95": 0.8706635556776603,
+    "prob_dd_over_30": 0.997,
+    "prob_dd_over_50": 0.832
+   }
+  },
+  {
+   "strategy": "degen_combo",
+   "params": {
+    "trend_margin": 1.0,
+    "sma": 150,
+    "threshold": "strict",
+    "vol_filter": true
+   },
+   "test": {
+    "days": 703,
+    "start": "2024-01-02",
+    "end": "2026-10-20",
+    "total_return": 0.0665390763804723,
+    "cagr": 0.023360518912883377,
+    "monthly_geo_mean": 0.0018964695011283172,
+    "monthly_arith_mean": 0.013725156964766002,
+    "pct_positive_months": 0.47058823529411764,
+    "best_month": 0.34031145361772985,
+    "worst_month": -0.21035414559729304,
+    "ann_vol": 0.6337606125257353,
+    "sharpe": 0.35487318038296645,
+    "sortino": 0.4977423925449453,
+    "max_drawdown": 0.5124362878457442,
+    "calmar": 0.04558716755031107,
+    "psr_0": 0.7228202970129016,
+    "t_stat_mean": 0.5927213498229283,
+    "skew": -0.13819957712480868,
+    "excess_kurtosis": 1.9789315921204684,
+    "hit_rate_days": 0.534375,
+    "avg_gross_exposure": 1.2249147300009742,
+    "time_in_market": 0.9061166429587483,
+    "annual_turnover": 143.50099871630619,
+    "annual_cost_drag": 0.0724283138902454,
+    "n_trades": 1677
+   },
+   "test_cost_stress_2x": {
+    "days": 703,
+    "start": "2024-01-02",
+    "end": "2026-10-20",
+    "total_return": -0.07280670025487801,
+    "cagr": -0.026733583548052997,
+    "monthly_geo_mean": -0.002220860036369565,
+    "monthly_arith_mean": 0.009632244411076392,
+    "pct_positive_months": 0.47058823529411764,
+    "best_month": 0.3388161176768847,
+    "worst_month": -0.21390599495395035,
+    "ann_vol": 0.6332396268229192,
+    "sharpe": 0.2754926387142641,
+    "sortino": 0.38479467727902145,
+    "max_drawdown": 0.5239186833763982,
+    "calmar": -0.05102620768507089,
+    "psr_0": 0.6769430711821413,
+    "t_stat_mean": 0.4601372482101403,
+    "skew": -0.14412044992736292,
+    "excess_kurtosis": 1.965888930465451,
+    "hit_rate_days": 0.5328125
+   },
+   "leverage_on_test": {
+    "kelly_leverage": 0.34647016568209305,
+    "growth_optimal_leverage_hist": 0.5,
+    "max_monthly_geo_any_leverage": 0.005116132098746062,
+    "targets": {
+     "5%": {
+      "reachable_historically": false,
+      "note": "no leverage up to 20x reaches this in-sample (volatility drag dominates)"
+     },
+     "8%": {
+      "reachable_historically": false,
+      "note": "no leverage up to 20x reaches this in-sample (volatility drag dominates)"
+     }
+    },
+    "table": [
+     {
+      "leverage": 1.0,
+      "monthly_geo": 6.135159434572657e-05,
+      "max_dd": 0.5184954379518103,
+      "ruined": false
+     },
+     {
+      "leverage": 2.0,
+      "monthly_geo": -0.03842334074086473,
+      "max_dd": 0.8975026583585862,
+      "ruined": false
+     },
+     {
+      "leverage": 3.0,
+      "monthly_geo": -0.10905131378476374,
+      "max_dd": 0.993730075899248,
+      "ruined": true
+     },
+     {
+      "leverage": 4.0,
+      "monthly_geo": -0.20920808636840338,
+      "max_dd": 0.9998941289901967,
+      "ruined": true
+     },
+     {
+      "leverage": 5.0,
+      "monthly_geo": -0.3365372228071509,
+      "max_dd": 0.9999996834431821,
+      "ruined": true
+     },
+     {
+      "leverage": 8.0,
+      "monthly_geo": -1.0,
+      "max_dd": 1.0480918443911544,
+      "ruined": true
+     },
+     {
+      "leverage": 10.0,
+      "monthly_geo": -1.0,
+      "max_dd": 1.0029058700713507,
+      "ruined": true
+     },
+     {
+      "leverage": 15.0,
+      "monthly_geo": -0.9361732421845409,
+      "max_dd": 1.0689727137631357,
+      "ruined": true
+     },
+     {
+      "leverage": 20.0,
+      "monthly_geo": -0.9555535065510407,
+      "max_dd": 1.0705431070500966,
+      "ruined": true
+     }
+    ]
+   },
+   "bootstrap_1y": {
+    "horizon_days": 252,
+    "annual_return_p05": -0.5657988927191384,
+    "annual_return_p50": -0.012042234783780525,
+    "annual_return_p95": 1.4491864716183311,
+    "prob_loss_year": 0.507,
+    "max_dd_p50": 0.4759288106671871,
+    "max_dd_p95": 0.7092237644946949,
+    "prob_dd_over_30": 0.939,
+    "prob_dd_over_50": 0.441
    }
   }
  ],
@@ -637,17 +937,17 @@
    "total_return": 0.38896043460355556,
    "cagr": 0.12499124924737037,
    "monthly_geo_mean": 0.009710240773912027,
-   "monthly_arith_mean": 0.00996266487557386,
+   "monthly_arith_mean": 0.009962664875573861,
    "pct_positive_months": 0.7058823529411765,
    "best_month": 0.06261964780580875,
    "worst_month": -0.03925108649072406,
    "ann_vol": 0.09423285911307884,
-   "sharpe": 1.297097420991883,
-   "sortino": 1.9235013995830026,
+   "sharpe": 1.2970974209918835,
+   "sortino": 1.9235013995830033,
    "max_drawdown": 0.10565552598749173,
    "calmar": 1.1830072121563027,
-   "psr_0": 0.9851006493656062,
-   "t_stat_mean": 2.1664565730001573,
+   "psr_0": 0.9851006493656063,
+   "t_stat_mean": 2.1664565730001577,
    "skew": 0.3442533352590318,
    "excess_kurtosis": 10.536354423511446,
    "hit_rate_days": 0.5519203413940256
