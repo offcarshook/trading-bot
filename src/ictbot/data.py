@@ -284,7 +284,9 @@ class CachedMinuteBars:
         self._dir.mkdir(parents=True, exist_ok=True)
 
     def _path(self, symbol: str, day: dt.date) -> Path:
-        return self._dir / symbol / f"{day.isoformat()}.csv.gz"
+        feed = getattr(self._source, "_feed", None)
+        tag = str(getattr(feed, "value", feed or "unknown"))  # never mix IEX and SIP bars
+        return self._dir / tag / symbol / f"{day.isoformat()}.csv.gz"
 
     def load(self, symbols: list[str], days: list[dt.date]) -> dict[str, pd.DataFrame]:
         frames: dict[str, list[pd.DataFrame]] = {s: [] for s in symbols}
@@ -297,6 +299,8 @@ class CachedMinuteBars:
             for sym, df in fetched.items():
                 for d in chunk:
                     part = df[(df.index >= ny_dt(d, dt.time(0))) & (df.index < ny_dt(d + dt.timedelta(days=1), dt.time(0)))]
+                    if part.empty:
+                        continue  # never cache an empty/failed day permanently
                     p = self._path(sym, d)
                     p.parent.mkdir(parents=True, exist_ok=True)
                     part.to_csv(p)

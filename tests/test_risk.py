@@ -344,3 +344,23 @@ def test_drawdown_kill_switch_reset_date(cfg: BotConfig):
     assert risk_state_from_broker(cfg=cfg, **kw).drawdown_pct == pytest.approx(9.0909, rel=1e-3)
     reset = dataclasses.replace(cfg, risk=dataclasses.replace(cfg.risk, drawdown_reset_date="2025-02-01"))
     assert risk_state_from_broker(cfg=reset, **kw).drawdown_pct == pytest.approx(0.0)
+
+
+def test_flatten_rereads_positions_after_cancels(cfg: BotConfig):
+    """Audit finding: a stop leg can fill while its cancel is in flight. flatten_all
+    must not then send a stale market close that would open a reverse position."""
+    broker = FakeBroker()
+    eng = ExecutionEngine(broker, cfg, sleep=lambda s: None)
+    placed = eng.place_entry(_approved(cfg), DAY1).orders[0]
+    broker.fill_entry(placed.id, 500.0)
+    real_cancel = broker.cancel
+
+    def racing_cancel(order_id):
+        broker.fill_leg(placed.id, "sl", 501.0)  # stop fills first...
+        real_cancel(order_id)  # ...then the cancel arrives
+
+    broker.cancel = racing_cancel
+    eng.flatten_all(DAY1, "eod")
+    flat_orders = [o for o in broker.orders("all") if (parse_client_order_id(o.client_order_id) or {}).get("leg") == "f"]
+    assert flat_orders == [], "a market close was sent for a position that no longer existed"
+    assert broker.positions() == []

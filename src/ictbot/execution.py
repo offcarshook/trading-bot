@@ -363,11 +363,19 @@ class ExecutionEngine:
                 if node.is_open:
                     self.cancel(node, f"flatten:{reason}")
                     actions.append(f"cancel {node.symbol} {node.client_order_id}")
-        for p in self._b.positions():
-            if p.qty == 0 or (symbols is not None and p.symbol not in symbols):
+        # Wait for cancels FIRST, then re-read positions: a stop/target leg can
+        # fill while its cancel is in flight, and closing a stale quantity would
+        # open a reverse position.
+        candidates = {p.symbol for p in self._b.positions() if p.qty != 0 and (symbols is None or p.symbol in symbols)}
+        for sym in sorted(candidates):
+            if not self._dry and not self._wait_symbol_orders_closed(sym):
+                log.error("orders still open; closing anyway", extra={"symbol": sym})
+        fresh = {p.symbol: p for p in self._b.positions()}
+        for sym in sorted(candidates):
+            p = fresh.get(sym)
+            if p is None or p.qty == 0:
+                actions.append(f"skip {sym}: already flat after cancels")
                 continue
-            if not self._dry and not self._wait_symbol_orders_closed(p.symbol):
-                log.error("orders still open; closing anyway", extra={"symbol": p.symbol})
             side = "sell" if p.qty > 0 else "buy"
             qty = int(abs(p.qty)) if float(abs(p.qty)).is_integer() else abs(p.qty)
             stamp = dt.datetime.now(tz=NY).strftime("%H%M%S")
