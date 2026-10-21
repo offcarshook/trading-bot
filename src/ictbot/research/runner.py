@@ -25,18 +25,21 @@ import logging
 import math
 import os
 import subprocess
+import sys
 import time
+from functools import partial
 from pathlib import Path
 from typing import Any
 
 import numpy as np
 import pandas as pd
 
+from . import engine as E
 from . import validation as V
 from .base import IMPORT_ERRORS, ResearchData, StrategyResult, StrategySpec, load_all_strategies
 from .costs import CostModel
 from .engine import run_weights
-from .metrics import sharpe, summarize
+from .metrics import TRADING_DAYS, periods_per_year, sharpe, summarize
 
 log = logging.getLogger(__name__)
 
@@ -147,6 +150,103 @@ def crypto_benchmark(data: ResearchData, splits: V.Splits, costs: CostModel) -> 
                              "walkforward_window": summarize(V.cut(res.returns, splits.train[0] + dt.timedelta(days=730), splits.validation[1]))}}
 
 
+def ann_periods(spec: StrategySpec, returns: pd.Series) -> int:
+    """Rows per year for annualizing: stock strategies keep the fixed 252 (unchanged reports); adaptive
+    (crypto, one row per calendar day) use the observed frequency, as metrics.summarize does."""
+    return TRADING_DAYS if spec.split_mode != "adaptive" else int(round(periods_per_year(returns)))
+
+
+# --------------------------------------------------------------------------- #
+# Null test
+# --------------------------------------------------------------------------- #
+
+
+def engine_replay(spec: StrategySpec, data: ResearchData, params: dict, costs: CostModel,
+                  expected: pd.Series) -> tuple[ResearchData, pd.DataFrame, dict] | None:
+    """(view, decision frame, keyword args) of the strategy's run_weights call, recorded by re-running it;
+    None unless exactly one call reproduces ``expected`` bit for bit (trade strategies, returns built from
+    several runs). StrategyResult.weights cannot be replayed faithfully: the engine reports decisions
+    forward-filled (crypto, tsmom) and letfrot the drifted book, both without the all-NaN HOLD rows, and
+    crypto trades its own hole-filled crypto view, not ``data``."""
+    calls, real = [], E.run_weights
+
+    def record(view, weights, c, **kw):
+        res = real(view, weights, c, **kw)
+        calls.append((view, weights, kw, res.returns))
+        return res
+
+    fn = getattr(spec.run_fn, "func", spec.run_fn)
+    own = sys.modules.get(getattr(fn, "__module__", ""))
+    mods = [m for k, m in list(sys.modules.items()) if (k.startswith(f"{__package__}.strategies.") or m is own)
+            and getattr(m, "run_weights", None) is real]
+    for m in mods:
+        m.run_weights = record
+    try:
+        spec.run(data, params, costs)
+    except Exception:  # noqa: BLE001 - no replay -> the caller falls back
+        log.exception("null replay failed", extra={"strategy": spec.name})
+        return None
+    finally:
+        for m in mods:
+            m.run_weights = real
+    hits = [c for c in calls if c[3].equals(expected)]
+    return hits[0][:3] if len(hits) == 1 else None
+
+
+def null_test(spec: StrategySpec, data: ResearchData, best: StrategyResult, params: dict, costs: CostModel,
+              start: dt.date, end: dt.date, periods: int) -> dict:
+    """Is the timing of the selected configuration better than random timing over [start, end]?
+
+    * "decision_shift" (strategies whose decision frame has HOLD rows: crypto, tsmom, letfrot): the
+      frame the strategy really sent to run_weights - decision rows plus all-NaN hold rows - is
+      circularly shifted (window row 0 = the decision in force at ``start``) and replayed on the
+      strategy's own view (crypto: its hole-filled crypto view, identical prices) with its own band /
+      engine arguments. A shifted run trades only after its (shifted) decision rows and holds the
+      drifted book in between, like the strategy. Not re-applied at the new dates: path-dependent
+      rules baked into the rows (crypto's frozen non-printing coin, letfrot's maintenance calls), so a
+      shifted row can trade a coin on a filled flat bar.
+    * "position_shift" (dense frames, or no exact replay): StrategyResult.weights (decisions
+      forward-filled) shifted and re-targeted EVERY row on ``data`` (adaptive: its crypto view) with
+      band = notes["band"] - absent (0) for most stock strategies although they trade with a band, so
+      their shifted runs also trade the small drifts the strategy's band absorbs (kept as before).
+    * "block_bootstrap_mean" for trade strategies (no weights): H0 mean return <= 0."""
+    actual = V.cut(best.returns, start, end)
+    if best.weights is None:
+        null = V.mean_return_test(actual)
+        null["method"] = "block_bootstrap_mean"
+        return null
+    view, wts, kw, method = data, best.weights, {"band": float(best.notes.get("band", 0.0))}, "position_shift"
+    rep = engine_replay(spec, data, params, costs, best.returns)
+    if rep is not None:
+        dec = rep[1][[c for c in rep[1].columns if c in rep[0].daily]].reindex(best.returns.index)
+        vals = dec.to_numpy(float)
+        hold = np.isnan(vals).all(axis=1)
+        win = (dec.index >= pd.Timestamp(start)) & (dec.index <= pd.Timestamp(end))
+        if hold[win].any() or spec.split_mode == "adaptive":
+            view, kw = rep[0], rep[2]
+            wts = dec
+            if hold[win].any():
+                method = "decision_shift"
+                i0 = int(np.argmax(win))
+                last = np.maximum.accumulate(np.where(hold, -1, np.arange(len(dec))))[i0]
+                wts = dec.copy()
+                wts.iloc[i0] = np.nan_to_num(vals[last]) if last >= 0 else 0.0
+    elif spec.split_mode == "adaptive":
+        view = data.crypto_view()
+    tv = wts[(wts.index >= pd.Timestamp(start)) & (wts.index <= pd.Timestamp(end))]
+
+    def rerun(w: pd.DataFrame) -> pd.Series:
+        return V.cut(run_weights(view, w, costs, **kw).returns, start, end)
+
+    null = V.position_shift_null(tv, rerun, sharpe(actual, periods), n_shifts=100, periods=periods)
+    null["method"] = method
+    if method == "decision_shift":
+        null.update(decision_rows=int((~tv.isna().all(axis=1)).sum()), rows=int(len(tv)))
+    elif spec.split_mode == "adaptive" and rep is None:
+        null["note"] = "no exact replay of the strategy's engine call: forward-filled weights re-targeted every row on the raw crypto view"
+    return null
+
+
 # --------------------------------------------------------------------------- #
 # Explore one strategy
 # --------------------------------------------------------------------------- #
@@ -170,7 +270,7 @@ def explore_strategy(spec: StrategySpec, data: ResearchData, splits: V.Splits, c
         results[k] = res
         full_returns[k] = res.returns
         tr = res.slice(tr_s, tr_e)
-        trial_rows.append({"params": p, "train_sharpe": sharpe(tr.returns), "train_n_trades": tr.n_trades,
+        trial_rows.append({"params": p, "train_sharpe": sharpe(tr.returns, ann_periods(spec, res.returns)), "train_n_trades": tr.n_trades,
                            "train_cagr": summarize(tr.returns).get("cagr")})
     ok = [r for r in trial_rows if "error" not in r]
     if not ok:
@@ -179,15 +279,18 @@ def explore_strategy(spec: StrategySpec, data: ResearchData, splits: V.Splits, c
     best_row = ok[int(np.nanargmax(scores))]
     bk = params_key(best_row["params"])
     best = results[bk]
+    ppy = ann_periods(spec, best.returns)
     tr, va = best.slice(tr_s, tr_e), best.slice(va_s, va_e)
     train_m = summarize(tr.returns, tr.exposure, tr.turnover, tr.n_trades, tr.costs)
     val_m = summarize(va.returns, va.exposure, va.turnover, va.n_trades, va.costs)
 
     train_matrix = pd.DataFrame({k: V.cut(s, tr_s, tr_e) for k, s in full_returns.items()})
-    dsr = V.deflated_sharpe(V.cut(best.returns, tr_s, tr_e), [sharpe(train_matrix[c]) / math.sqrt(252) for c in train_matrix], len(train_matrix.columns))
+    dsr = V.deflated_sharpe(V.cut(best.returns, tr_s, tr_e), [sharpe(train_matrix[c]) / math.sqrt(252) for c in train_matrix], len(train_matrix.columns),
+                            periods=ppy)
     pbo = V.pbo_cscv(train_matrix) if train_matrix.shape[1] > 1 else {"pbo": None, "reason": "single trial"}
     sens = V.sensitivity([r["params"] for r in ok], scores, spec.param_grid)
-    wf = V.walk_forward({k: V.cut(s, tr_s, va_e) for k, s in full_returns.items()}, tr_s, va_e, train_years=wf_train_years, step_months=6)
+    wf = V.walk_forward({k: V.cut(s, tr_s, va_e) for k, s in full_returns.items()}, tr_s, va_e, train_years=wf_train_years, step_months=6,
+                        objective=partial(sharpe, periods=ppy))
     wf_m = summarize(wf["oos_returns"])
 
     stressed = spec.run(data, best_row["params"], costs.stressed(2.0))
@@ -195,19 +298,13 @@ def explore_strategy(spec: StrategySpec, data: ResearchData, splits: V.Splits, c
 
     null = {"p_value": None}
     if run_null:
-        if best.weights is not None:
-            tv = best.weights[(best.weights.index >= pd.Timestamp(tr_s)) & (best.weights.index <= pd.Timestamp(va_e))]
+        try:
+            null = null_test(spec, data, best, best_row["params"], costs, tr_s, va_e, ppy)
+        except Exception as exc:  # noqa: BLE001 - recorded (fails the null check), the rest of the report stands
+            log.exception("null test failed", extra={"strategy": spec.name})
+            null = {"p_value": None, "error": f"{type(exc).__name__}: {exc}"[:300]}
 
-            def rerun(wts: pd.DataFrame) -> pd.Series:
-                return V.cut(run_weights(data, wts, costs, band=float(best.notes.get("band", 0.0))).returns, tr_s, va_e)
-
-            null = V.position_shift_null(tv, rerun, sharpe(V.cut(best.returns, tr_s, va_e)), n_shifts=100)
-            null["method"] = "position_shift"
-        else:
-            null = V.mean_return_test(V.cut(best.returns, tr_s, va_e))
-            null["method"] = "block_bootstrap_mean"
-
-    regimes = V.regime_breakdown(V.cut(best.returns, tr_s, va_e), labels)
+    regimes = V.regime_breakdown(V.cut(best.returns, tr_s, va_e), labels, periods=ppy)
     # exposure of whichever trial walk-forward picked for each block, so margin
     # interest is only charged on days the strategy actually holds positions
     wf_expo = []
@@ -215,7 +312,7 @@ def explore_strategy(spec: StrategySpec, data: ResearchData, splits: V.Splits, c
         e = results[ch["chosen"]].exposure
         wf_expo.append(e[(e.index >= pd.Timestamp(ch["from"])) & (e.index <= pd.Timestamp(ch["to"]))])
     wf_exposure = pd.concat(wf_expo) if wf_expo else None
-    lev_wf = V.leverage_analysis(wf["oos_returns"], MONTHLY_TARGETS, costs.margin_rate, exposure=wf_exposure) if len(wf["oos_returns"]) > 60 else {}
+    lev_wf = V.leverage_analysis(wf["oos_returns"], MONTHLY_TARGETS, costs.margin_rate, exposure=wf_exposure, periods=ppy) if len(wf["oos_returns"]) > 60 else {}
 
     c = CRITERIA
     checks = {
@@ -285,10 +382,19 @@ def run_explore(data_full: ResearchData, out_dir: Path, only: list[str] | None =
             continue
         sp = splits_for(spec, data_full)
         data_s = data if spec.split_mode != "adaptive" else data_full.truncate(sp.validation[1])  # <-- its test period locked out
+        lab = labels
+        if spec.split_mode == "adaptive" and "SPY" in data_s.daily:  # SPY regime through ITS validation end, carried over weekends
+            lab = V.regime_labels(data_s.daily["SPY"]["close"])
+            lab = lab.reindex(lab.index.union(data_s.crypto_view().dates())).ffill(limit=6)
         log.info("exploring", extra={"strategy": name, "trials": len(spec.trials()), "splits": sp.as_dict()})
-        rep = explore_strategy(spec, data_s, sp, costs, labels, run_null=run_null, wf_train_years=3 if spec.split_mode != "adaptive" else 2)
-        if spec.split_mode == "adaptive":
-            rep["benchmarks_own_splits"] = crypto_benchmark(data_s, sp, costs)
+        try:
+            rep = explore_strategy(spec, data_s, sp, costs, lab, run_null=run_null, wf_train_years=3 if spec.split_mode != "adaptive" else 2)
+            if spec.split_mode == "adaptive":
+                rep["benchmarks_own_splits"] = crypto_benchmark(data_s, sp, costs)
+        except Exception as exc:  # noqa: BLE001 - one broken strategy is recorded in the report, the run goes on
+            log.exception("strategy failed", extra={"strategy": name})
+            reports.append({"strategy": name, "family": spec.family, "split_mode": spec.split_mode, "error": f"{type(exc).__name__}: {exc}"[:300]})
+            continue
         series[name] = rep.pop("_series", {})
         reports.append(rep)
         log.info("explored", extra={"strategy": name, "survives": rep.get("survives"), "val_sharpe": rep.get("validation", {}).get("sharpe"),
@@ -355,10 +461,11 @@ def run_test(data_full: ResearchData, frozen_path: Path, results_root: Path, rea
         spec = specs[cand["strategy"]]
         sp = splits_for(spec, data_full)
         res = spec.run(data_full, cand["params"], costs)
+        ppy = ann_periods(spec, res.returns)
         te = res.slice(*sp.test)
         m = summarize(te.returns, te.exposure, te.turnover, te.n_trades, te.costs)
         stressed = summarize(spec.run(data_full, cand["params"], costs.stressed(2.0)).slice(*sp.test).returns)
-        lev = V.leverage_analysis(te.returns, MONTHLY_TARGETS, costs.margin_rate, exposure=te.exposure)
+        lev = V.leverage_analysis(te.returns, MONTHLY_TARGETS, costs.margin_rate, exposure=te.exposure, periods=ppy)
         bench = crypto_benchmark(data_full, V.Splits(sp.train, sp.validation, sp.test), costs) if spec.split_mode == "adaptive" else {}
         if bench:
             cv = data_full.crypto_view()
@@ -366,7 +473,7 @@ def run_test(data_full: ResearchData, frozen_path: Path, results_root: Path, rea
             bench = {"buy_hold_BTC_test": summarize(bh.slice(*sp.test).returns)}
         out["candidates"].append({"strategy": cand["strategy"], "params": cand["params"], "test_period": [str(sp.test[0]), str(sp.test[1])],
                                   "benchmark_own_test": bench, "test": m, "test_cost_stress_2x": stressed,
-                                  "leverage_on_test": lev, "bootstrap_1y": V.bootstrap_summary(te.returns, n_sims=1000)})
+                                  "leverage_on_test": lev, "bootstrap_1y": V.bootstrap_summary(te.returns, n_sims=1000, horizon_days=ppy)})
         series[cand["strategy"]] = {"test": te.returns}
     out_dir = results_root / "test"
     out_dir.mkdir(parents=True, exist_ok=True)

@@ -379,7 +379,7 @@ def run_rebalance(cfg: PortfolioConfig, broker: Any, data: ResearchData, prices:
         log.exception("rebalance failed")
         raise
     finally:
-        _write(out_dir, today, report)
+        _write(out_dir, today, report, "_crypto" if asset_class == "crypto" else "")  # the 00:07 UTC run shares the NY date
 
 
 def simulate_portfolio(data: ResearchData, cfg: PortfolioConfig, costs: CostModel | None = None):
@@ -412,7 +412,7 @@ def simulate_portfolio(data: ResearchData, cfg: PortfolioConfig, costs: CostMode
     return run_weights(data, total, costs, band=cfg.rebalance_band, cash_only=coins)
 
 
-def _write(out_dir: Path, today: dt.date, report: dict) -> None:
+def _write(out_dir: Path, today: dt.date, report: dict, suffix: str = "") -> None:
     d = out_dir / today.isoformat()
     d.mkdir(parents=True, exist_ok=True)
-    (d / "daily_portfolio.json").write_text(json.dumps(report, indent=1, default=str))
+    (d / f"daily_portfolio{suffix}.json").write_text(json.dumps(report, indent=1, default=str))

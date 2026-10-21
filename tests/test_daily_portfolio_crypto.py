@@ -147,3 +147,14 @@ def test_engine_cash_only_buys_wait_for_cash():
     res = run_weights(data, w, CostModel(), cash_only=("BTC/USD",))
     assert res.exposure.max() <= 1.0 + 1e-12
     assert res.exposure.iloc[-1] == pytest.approx(1.0)  # Monday: SPY sold, BTC bought with the freed cash
+
+
+def test_crypto_run_does_not_overwrite_the_stock_runs_report(fixed_targets, tmp_path):
+    # 00:07 UTC is still the previous NY date: both runs file under the same day
+    b, prices = _broker(), {"BTC/USD": 60_000.0, "TQQQ": 50.0}
+    run_rebalance(CFG, b, None, prices, NOW, dry_run=False, force=False, out_dir=tmp_path, sleep=lambda s: None, asset_class="stocks")
+    late = ny_dt(NOW.date(), dt.time(20, 7))
+    run_rebalance(CFG, b, None, prices, late, dry_run=False, force=False, out_dir=tmp_path, sleep=lambda s: None, asset_class="crypto")
+    import json
+    reps = [json.loads(p.read_text()) for p in (tmp_path / NOW.date().isoformat()).glob("*.json")]
+    assert sorted(r["asset_class"] for r in reps) == ["crypto", "stocks"]
