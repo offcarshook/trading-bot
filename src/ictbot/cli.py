@@ -162,6 +162,48 @@ def cmd_backtest(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_test_order(args: argparse.Namespace) -> int:
+    """Plumbing test: place ONE 1-share bracket order priced far below the
+    market (it should not fill), confirm Alpaca accepted it, then cancel it.
+    Deliberately bypasses the strategy; it still carries a stop and target."""
+    import os
+
+    from .execution import make_client_order_id
+    from .risk import assert_order_invariants
+    from .models import Direction
+    from .strategy import round_to_tick
+
+    cfg = _cfg(args)
+    broker, data = _clients(cfg)
+    sym = args.symbol
+    last = data.latest_trade_price(sym)
+    if not last:
+        raise ValueError(f"no recent price for {sym}")
+    tick = cfg.execution.tick_size
+    entry = round_to_tick(last * (1 - args.below_pct / 100), tick, "down")
+    stop = round_to_tick(entry * 0.99, tick, "down")
+    target = round_to_tick(entry * 1.02, tick, "up")
+    assert_order_invariants(Direction.LONG, 1, entry, stop, target)
+    stamp = now_ny().strftime("%H%M%S")
+    coid = make_client_order_id("icbtest", now_ny().date(), sym, f"t{stamp}", "e")
+    o = broker.submit_bracket(symbol=sym, side="buy", qty=1, limit_price=entry, take_profit=target, stop_loss=stop, tif="day", client_order_id=coid)
+    msg = f"TEST ORDER accepted: {sym} BUY 1 @ {entry} (last {last}) stop {stop} target {target} status={o.status} legs={len(o.legs)} id={o.id}"
+    log.info(msg)
+    if os.environ.get("GITHUB_ACTIONS") == "true":
+        print(f"::notice title=ictbot test order::{msg}", flush=True)
+    if args.keep_open:
+        log.info("keep_open set - order left working (DAY order, expires at the close if unfilled)")
+        return 0
+    time.sleep(args.cancel_after)
+    broker.cancel(o.id)
+    after = broker.order_by_client_id(coid)
+    done = f"TEST ORDER cancelled after {args.cancel_after}s: final status={after.status if after else 'unknown'}"
+    log.info(done)
+    if os.environ.get("GITHUB_ACTIONS") == "true":
+        print(f"::notice title=ictbot test order::{done}", flush=True)
+    return 0
+
+
 def cmd_reset_killswitch(args: argparse.Namespace) -> int:
     path = Path(args.config)
     today = now_ny().date().isoformat()
@@ -198,10 +240,15 @@ def build_parser() -> argparse.ArgumentParser:
     b.add_argument("--start")
     b.add_argument("--end")
     sub.add_parser("reset-killswitch")
+    t = sub.add_parser("test-order", help="place + cancel one far-from-market 1-share paper bracket")
+    t.add_argument("--symbol", default="SPY")
+    t.add_argument("--below-pct", type=float, default=10.0)
+    t.add_argument("--cancel-after", type=int, default=120)
+    t.add_argument("--keep-open", action="store_true")
     return p
 
 
-COMMANDS = {"check": cmd_check, "run": cmd_run, "flatten": cmd_flatten, "report": cmd_report, "backtest": cmd_backtest, "reset-killswitch": cmd_reset_killswitch}
+COMMANDS = {"check": cmd_check, "run": cmd_run, "flatten": cmd_flatten, "report": cmd_report, "backtest": cmd_backtest, "reset-killswitch": cmd_reset_killswitch, "test-order": cmd_test_order}
 
 
 def _gh_annotation(title: str, message: str) -> None:

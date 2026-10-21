@@ -256,6 +256,14 @@ class AlpacaMarketData:
         rows = barset.data.get(symbol, []) if hasattr(barset, "data") else []
         return pd.Series({b.timestamp.astimezone(NY).date(): float(b.close) for b in rows}, dtype=float)
 
+    def latest_trade_price(self, symbol: str) -> float | None:
+        from alpaca.data.requests import StockLatestTradeRequest
+
+        req = StockLatestTradeRequest(symbol_or_symbols=symbol, feed=self._feed)
+        res = call_with_retry(lambda: self._client.get_stock_latest_trade(req), what="get_stock_latest_trade")
+        t = res.get(symbol) if isinstance(res, dict) else None
+        return float(t.price) if t is not None and t.price else None
+
     def latest_quote(self, symbol: str) -> Quote | None:
         from alpaca.data.requests import StockLatestQuoteRequest
 

@@ -1,0 +1,48 @@
+# Manual plumbing test: places ONE 1-share SPY bracket order on the PAPER
+# account priced well below the market (so it should not fill), confirms
+# Alpaca accepted it, then cancels it.
+name: test order (paper)
+
+on:
+  workflow_dispatch:
+    inputs:
+      symbol:
+        description: "Symbol"
+        default: "SPY"
+      below_pct:
+        description: "Limit price this % below the last trade"
+        default: "10"
+      keep_open:
+        description: "Leave the order open instead of cancelling (expires at the close)"
+        type: boolean
+        default: false
+
+concurrency:
+  group: ictbot-test-order
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  test-order:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      APCA_API_KEY_ID: ${{ secrets.APCA_API_KEY_ID }}
+      APCA_API_SECRET_KEY: ${{ secrets.APCA_API_SECRET_KEY }}
+      PYTHONUNBUFFERED: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - run: |
+          pip install -r requirements.txt
+          pip install -e . --no-deps
+      - name: Test order
+        run: |
+          ARGS="--symbol ${{ inputs.symbol }} --below-pct ${{ inputs.below_pct }}"
+          [ "${{ inputs.keep_open }}" = "true" ] && ARGS="$ARGS --keep-open"
+          python -m ictbot test-order $ARGS
