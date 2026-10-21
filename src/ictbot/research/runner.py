@@ -100,9 +100,10 @@ def benchmarks(data: ResearchData, costs: CostModel) -> dict[str, StrategyResult
         out["buy_hold_QQQ"] = run_weights(data, pd.DataFrame({"QQQ": 1.0}, index=dates), costs)
     if "SPY" in data.daily and "IEF" in data.daily:
         w = pd.DataFrame({"SPY": 0.6, "IEF": 0.4}, index=dates)
-        month_end = w.index.to_series().groupby(w.index.to_period("M")).transform("max") == w.index.to_series()
-        w = w.where(month_end).ffill().fillna({"SPY": 0.6, "IEF": 0.4})
-        out["60_40_SPY_IEF"] = run_weights(data, w, costs, band=0.02)
+        per = pd.Series(dates.to_period("M"), index=dates)
+        first_of_month = per.ne(per.shift(1))
+        w = w.where(first_of_month, np.nan)  # all-NaN rows = hold (drift) -> true monthly rebalance
+        out["60_40_SPY_IEF"] = run_weights(data, w, costs)
     return out
 
 
@@ -176,7 +177,7 @@ def explore_strategy(spec: StrategySpec, data: ResearchData, splits: V.Splits, c
             tv = best.weights[(best.weights.index >= pd.Timestamp(tr_s)) & (best.weights.index <= pd.Timestamp(va_e))]
 
             def rerun(wts: pd.DataFrame) -> pd.Series:
-                return V.cut(run_weights(data, wts, costs, band=float(best_row["params"].get("band", 0.0))).returns, tr_s, va_e)
+                return V.cut(run_weights(data, wts, costs, band=float(best.notes.get("band", 0.0))).returns, tr_s, va_e)
 
             null = V.position_shift_null(tv, rerun, sharpe(V.cut(best.returns, tr_s, va_e)), n_shifts=100)
             null["method"] = "position_shift"

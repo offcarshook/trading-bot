@@ -40,8 +40,12 @@ def run_weights(
     C = data.panel("close", syms)
     dates = O.index.union(C.index)
     O, C = O.reindex(dates), C.reindex(dates)
-    W = weights[syms].reindex(dates).ffill().fillna(0.0)  # decisions persist until changed
-    o, c, w_target_by_decision = O.to_numpy(float), C.to_numpy(float), W.to_numpy(float)
+    # A row that is entirely NaN means "no decision today": hold the drifted
+    # position (no trade). A row with numbers is a target; NaN cells in it = 0.
+    W_raw = weights[syms].reindex(dates)
+    hold_row = W_raw.isna().all(axis=1).to_numpy()
+    W = W_raw.ffill().fillna(0.0)  # for reporting / null tests
+    o, c, w_target_by_decision = O.to_numpy(float), C.to_numpy(float), W_raw.fillna(0.0).to_numpy(float)
     n, k = o.shape
     cost_bps = np.array([costs.trade_cost_bps(s, entry_kind) for s in syms]) / 1e4
 
@@ -60,7 +64,10 @@ def run_weights(
         port_on = float(np.dot(w_hold, r_on))
         denom = 1.0 + port_on
         w_after_gap = w_hold * (1.0 + r_on) / denom if denom > 0 else w_hold * 0.0
-        target = np.where(tradable, w_target_by_decision[i - 1], w_after_gap)
+        if hold_row[i - 1]:
+            target = w_after_gap.copy()
+        else:
+            target = np.where(tradable, w_target_by_decision[i - 1], w_after_gap)
         delta = target - w_after_gap
         if band > 0:
             small = np.abs(delta) < band

@@ -37,5 +37,7 @@ def rebalance_mask(index: pd.DatetimeIndex, freq: str) -> pd.Series:
 
 
 def hold_between_rebalances(w: pd.DataFrame, freq: str) -> pd.DataFrame:
+    """Keep target rows only on rebalance sessions; other rows become all-NaN,
+    which the engine treats as "hold the drifted position, no trade"."""
     mask = rebalance_mask(w.index, freq)
-    return w.where(mask, np.nan).ffill().fillna(0.0)
+    return w.where(mask, np.nan)

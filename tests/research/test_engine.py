@@ -102,3 +102,13 @@ def test_summary_monthly_geo_mean():
     s = summarize(r)
     assert s["monthly_geo_mean"] == pytest.approx(1.12 ** (1 / 12) - 1, rel=1e-6)
     assert sharpe(r) > 0
+
+
+def test_all_nan_rows_hold_without_trading(monkeypatch):
+    _zero_spread(monkeypatch)
+    d = _data(closes=[100, 110, 99, 120, 130], opens=[100, 105, 100, 118, 125])
+    idx = d.daily["SPY"].index
+    w = pd.DataFrame({"SPY": [0.5, np.nan, np.nan, np.nan, np.nan]}, index=idx)
+    res = run_weights(d, w, ZERO)
+    assert res.turnover.iloc[1] == pytest.approx(0.5)  # one entry trade...
+    assert res.turnover.iloc[2:].sum() == pytest.approx(0.0)  # ...then pure drift, no re-trading to 0.5
