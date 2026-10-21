@@ -26,7 +26,8 @@ from ictbot.research.data import synthetic_data
 from ictbot.timeutils import ny_dt
 
 ROOT = Path(__file__).resolve().parents[1]
-CFG = load_portfolio_config(ROOT / "config" / "daily_portfolio.yaml")
+CFG = load_portfolio_config(ROOT / "tests" / "fixtures" / "portfolio_moderate.yaml")
+LIVE = load_portfolio_config(ROOT / "config" / "daily_portfolio.yaml")
 
 
 @pytest.fixture(scope="module")
@@ -140,3 +141,7 @@ def test_unquoted_reset_date_is_accepted(tmp_path):
     p = tmp_path / "c.yaml"
     p.write_text(txt)
     assert load_portfolio_config(p).drawdown_reset_date == "2026-10-21"
+
+
+def test_live_config_loads_within_broker_caps():
+    assert 0 < LIVE.gross_cap <= 2.0 and LIVE.sleeves

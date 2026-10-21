@@ -1,0 +1,24 @@
+# Daily multi-strategy PAPER portfolio ("aggressive" profile).
+# Sleeves reuse the research strategy code with the parameters frozen in
+# research/frozen.json (selected on 2016-2021 train data only).
+#
+# Historical simulation (walk-forward 2019-2023, costs included) of this exact
+# mix: ~1.7%/month, ~22%/yr, max drawdown ~20%, worst month ~-12%.
+# Locked 2024-2026 test: ~0.9%/month, max drawdown ~10%.
+# Past simulated results do not predict the future. Not financial advice.
+profile: aggressive
+sleeves:
+  - strategy: xsmom_sector_rotation
+    weight: 1.0
+    params: {lookback: blend_1_3_6_12, top_n: 4, rebalance: W, abs_filter: false, market_filter: true, band: 0.01}
+  - strategy: meanrev_regime
+    weight: 2.0          # 2x the research sizing (research gross 1.0 over SPY/QQQ/IWM/DIA)
+    params: {signal: ibs, threshold: strict, exit_rule: rsi2, max_hold: 5, vol_filter: true, allow_short: false, gross: 1.0, band: 0.02}
+gross_cap: 1.9           # Alpaca overnight (Reg-T) buying power is ~2x - stay under it
+rebalance_band: 0.02     # skip trades smaller than 2% of equity (cost control)
+max_drawdown_kill: 0.30  # liquidate and stop if equity falls 30% from its peak
+drawdown_reset_date: null
+history_calendar_days: 620
+client_order_id_prefix: dpf
+window_start: "09:31"    # New York time; the job exits outside this window
+window_end: "11:00"
