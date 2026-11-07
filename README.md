@@ -10,10 +10,12 @@ An original 11v11 football game for mobile browsers, built with Three.js.
 | | Attacking | Defending |
 |---|---|---|
 | Left thumb (anywhere) | Move, push to the edge to sprint | Move |
-| PASS / J | Tap: ground pass · Hold: lob/cross | Switch player |
-| THRU / L | Through ball (hold: lofted) | Teammate press |
+| PASS / J | Instant ground pass (auto-cross from wide areas) | Switch player |
+| THRU / L | Through ball | Hold: press the ball carrier (a teammate joins) |
+| LOB / U | Lofted long ball | Slide tackle |
 | SHOOT / K | Tap: finesse curler · Hold: power (past the line skies it) | Tackle · double-tap: slide |
 | SKILL / I | Feint past a defender | Hold: contain |
+| SUBS | Substitutions (5 per match, made at the next stoppage) | |
 | SPRINT / Shift | Sprint | Sprint |
 
 ## Files
