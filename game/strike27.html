@@ -242,10 +242,7 @@ h1 em{font-style:normal;color:var(--flood);display:block}
 
 <script type="module">
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js';
-
-/* =========================================================
-   Constants & helpers
-   ========================================================= */
+/* ===== Constants & helpers ===== */
 const PL=105, PW=68, HL=52.5, HW=34, GHW=3.66, GH=2.44, BOXX=HL-16.5, BOXZ=20.16;
 const BR=0.2, G=9.81, ROLL=3.0, PSCALE=1.22;
 const $=s=>document.querySelector(s);
@@ -277,9 +274,7 @@ const DIFF={
 };
 const SIDE=[1,-1];
 
-/* =========================================================
-   Game state
-   ========================================================= */
+/* ===== Game state ===== */
 const S={phase:'restart',user:-1,teams:[TEAMS[0],TEAMS[1]],score:[0,0],half:1,clock:0,halfLen:99999,
   diff:DIFF.pro,camMode:0,ctrl:null,timeScale:1,rs:null,phaseT:0,lastTouch:0,lastKicker:null,shotId:0,
   stats:{shots:[0,0],poss:[0,0]},paused:false,goalTeam:0,goalEnd:1,autoT:0,sound:true,demo:true};
@@ -287,9 +282,7 @@ const sel={team:0,opp:1,len:4,diff:'pro',cam:0};
 const ball={x:0,y:BR,z:0,vx:0,vy:0,vz:0,curl:0,dip:0,owner:null,shot:false,shotTeam:-1,passTo:null};
 const players=[]; const TP=[[],[]];
 
-/* =========================================================
-   Renderer & scene
-   ========================================================= */
+/* ===== Renderer & scene ===== */
 const renderer=new THREE.WebGLRenderer({antialias:true,powerPreference:'high-performance'});
 renderer.setPixelRatio(Math.min(devicePixelRatio||1,1.75));
 renderer.setSize(innerWidth,innerHeight);
@@ -412,9 +405,7 @@ scene.add(marker);marker.visible=false;
 const recvRing=new THREE.Mesh(new THREE.RingGeometry(.5,.62,28).rotateX(-Math.PI/2),new THREE.MeshBasicMaterial({color:0xffd23f,transparent:true,opacity:.8,depthWrite:false}));
 recvRing.position.y=.03;scene.add(recvRing);recvRing.visible=false;
 
-/* =========================================================
-   Players (procedural rigged models)
-   ========================================================= */
+/* ===== Players (procedural rigged models) ===== */
 const GEO={torso:new THREE.BoxGeometry(.48,.62,.28),shorts:new THREE.BoxGeometry(.46,.26,.3),
   leg:new THREE.BoxGeometry(.16,.72,.17).translate(0,-.36,0),arm:new THREE.BoxGeometry(.13,.58,.13).translate(0,-.29,0),
   head:new THREE.SphereGeometry(.15,12,10),hair:new THREE.SphereGeometry(.158,12,8,0,Math.PI*2,0,Math.PI*.5)};
@@ -463,9 +454,7 @@ function setupTeams(){
   refKit();
 }
 
-/* =========================================================
-   Audio (procedural Web Audio)
-   ========================================================= */
+/* ===== Audio (procedural Web Audio) ===== */
 const AU={ctx:null,master:null,crowd:null,noise:null,
   init(){if(this.ctx)return;try{const C=window.AudioContext||window.webkitAudioContext;this.ctx=new C();this.master=this.ctx.createGain();this.master.gain.value=S.sound?.8:0;this.master.connect(this.ctx.destination);
     const len=this.ctx.sampleRate*2,buf=this.ctx.createBuffer(1,len,this.ctx.sampleRate),d=buf.getChannelData(0);let last=0;for(let i=0;i<len;i++){const w=Math.random()*2-1;last=(last+.02*w)/1.02;d[i]=w*.4+last*3}
@@ -489,9 +478,7 @@ const AU={ctx:null,master:null,crowd:null,noise:null,
 };
 const buzz=p=>{try{navigator.vibrate&&navigator.vibrate(p)}catch(e){}};
 
-/* =========================================================
-   Geometry helpers for the match logic
-   ========================================================= */
+/* ===== Geometry helpers for the match logic ===== */
 const inOwnBox=p=>Math.abs(p.z)<BOXZ&&p.x*SIDE[p.team]<-BOXX;
 function nearestOpp(p){let b=null,bd=1e9;for(const o of TP[1-p.team]){const d=hyp(o.x-p.x,o.z-p.z);if(d<bd){bd=d;b=o}}return[b,bd]}
 const pressureOn=p=>clamp(1-(nearestOpp(p)[1]-1)/4,0,1);
@@ -512,9 +499,7 @@ function intercept(p){
   const [bx,bz]=predictBall(2.8);return[bx,bz,2.8+hyp(bx-p.x,bz-p.z)/mx];
 }
 
-/* =========================================================
-   Ball control: possession, kicks, passes, shots
-   ========================================================= */
+/* ===== Ball control: possession, kicks, passes, shots ===== */
 function setCtrl(p){if(S.user<0||!p||p.team!==S.user||p.gk)return;S.ctrl=p;$('#whoNum').textContent=p.num;$('#whoName').textContent=p.name}
 function gainPossession(p){
   if(p.offside&&S.phase==='play'){callOffside(p);return}
@@ -617,9 +602,7 @@ function slideContact(p){
   for(const o of TP[1-p.team]){if(hyp(o.x-p.x,o.z-p.z)<.95){p.slideHit=true;o.stun=.9;if(Math.random()<.65)foul(p,o,'slide');return}}
 }
 
-/* =========================================================
-   Squads, fitness, substitutions
-   ========================================================= */
+/* ===== Squads, fitness, substitutions ===== */
 const ALL=players.slice(),ROSTER=[TP[0].slice(),TP[1].slice()],BENCH=[[],[]];
 const R=(t,i)=>ROSTER[t][i].off?null:ROSTER[t][i];
 const RA=(t,i)=>R(t,i)||TP[t].filter(q=>!q.gk).sort((a,b)=>Math.abs(a.i-i)-Math.abs(b.i-i))[0];
@@ -658,9 +641,7 @@ function sendOff(p){
   if(S.ctrl===p){S.ctrl=null;setCtrl(TP[p.team].find(q=>!q.gk))}
 }
 
-/* =========================================================
-   Officials: referee + two assistants
-   ========================================================= */
+/* ===== Officials: referee + two assistants ===== */
 const OFFKIT={kit:new THREE.MeshLambertMaterial({color:0x111111}),shorts:new THREE.MeshLambertMaterial({color:0x111111}),socks:new THREE.MeshLambertMaterial({color:0x111111})};
 function mkOfficial(role){
   const o={role,x:role==='ref'?-6:0,z:role==='ref'?10:0,vx:0,vz:0,spd:0,face:0,faceT:0,phase:rand(0,6),cardT:0,flagT:0,advT:0};
@@ -704,9 +685,7 @@ function syncOfficials(){
     _p.set(o.x,.02,o.z);_s.set(1,1,1);_q.identity();_m.compose(_p,_q,_s);shadows.setMatrixAt(23+k,_m)});
 }
 
-/* =========================================================
-   Discipline: fouls, advantage, cards
-   ========================================================= */
+/* ===== Discipline: fouls, advantage, cards ===== */
 function showCard(p,red){
   REF.cardT=2.4;REF.cardMesh.material.color.setHex(red?0xe0202a:0xffd400);REF.faceT=Math.atan2(p.z-REF.z,p.x-REF.x);
   notice(`<i class="cardi" style="background:${red?'#e0202a':'#ffd400'}"></i><span><b>${red?'RED CARD':'YELLOW CARD'}</b>#${p.num} ${p.name} · ${S.teams[p.team].code}</span>`);S.stats.cards[p.team][red?1:0]++;
@@ -743,9 +722,7 @@ function stepAdvantage(dt){
   if(a.t>3)S.adv=null;
 }
 
-/* =========================================================
-   Offside
-   ========================================================= */
+/* ===== Offside ===== */
 function markOffside(T,kicker){
   const s=SIDE[T],xs=TP[1-T].map(o=>o.x*s).sort((a,b)=>b-a),line=Math.max(xs[1]??0,ball.x*s,0);
   for(const q of players)q.offside=q.team===T&&!q.gk&&q!==kicker&&q.x*s>line+.3;
@@ -759,9 +736,7 @@ function callOffside(p){
   ballDead('freekick',1-p.team,x,z,'OFFSIDE');
 }
 
-/* =========================================================
-   Substitutions screen
-   ========================================================= */
+/* ===== Substitutions screen ===== */
 let subPick=null;
 function fitBar(f){return`<i class="fit"><i style="transform:scaleX(${clamp(f,0,1).toFixed(2)});background:${f>.7?'var(--signal)':f>.5?'var(--flood)':'var(--flare)'}"></i></i>`}
 function renderSubs(){
@@ -786,9 +761,7 @@ $('#subsOpen').addEventListener('click',openSubs);
 const PRESS_NAMES=['Low block','Balanced','High press'];
 $('#pressBtn').addEventListener('click',()=>{S.press[S.user]=(S.press[S.user]+1)%3;$('#pressBtn').textContent='Pressing: '+PRESS_NAMES[S.press[S.user]]});
 
-/* =========================================================
-   Restarts, goals, halves
-   ========================================================= */
+/* ===== Restarts, goals, halves ===== */
 /* ---------- Set pieces: dead ball → cut → real shape → aim → run-up → strike ---------- */
 const SP_NAME={throw:'THROW-IN',corner:'CORNER',goalkick:'GOAL KICK',freekick:'FREE KICK',penalty:'PENALTY'};
 const RUNUP={kickoff:.9,goalkick:3.2,corner:2.2,freekick:2.6,penalty:2.8};
@@ -1050,9 +1023,7 @@ function endHalf(){
   else{S.phase='full';AU.whistle(3,.4);if(S.demo){setTimeout(startDemo,600);return}showFullTime()}
 }
 
-/* =========================================================
-   Replay recorder
-   ========================================================= */
+/* ===== Replay recorder ===== */
 const REC={N:210,F:3+22*8,head:0,count:0,acc:0};REC.buf=new Float32Array(REC.N*REC.F);
 function record(dt){REC.acc+=dt;if(REC.acc<1/30)return;REC.acc-=1/30;const b=REC.buf,o=REC.head*REC.F;b[o]=ball.x;b[o+1]=ball.y;b[o+2]=ball.z;
   ALL.forEach((p,i)=>{const k=o+3+i*8;b[k]=p.x;b[k+1]=p.z;b[k+2]=p.face;b[k+3]=p.phase;b[k+4]=p.kickT;b[k+5]=p.slideT;b[k+6]=p.diveT*(p.diveDir||1);b[k+7]=p.spd});
@@ -1064,9 +1035,7 @@ function startReplay(){const n=Math.min(REC.count,165);if(n<40){afterGoal();retu
   RP={start:(REC.head-n+REC.N)%REC.N,n,t:0};S.phase='replay';$('#replayTag').hidden=false;banner('',null)}
 function afterGoal(){if(cutting)return;RP=null;$('#replayTag').hidden=true;REC.count=0;const k=1-S.goalTeam;cutTo(()=>restart('kickoff',k))}
 
-/* =========================================================
-   Input: floating joystick, buttons, keyboard, gamepad
-   ========================================================= */
+/* ===== Input: floating joystick, buttons, keyboard, gamepad ===== */
 const IN={jx:0,jy:0,joyId:null,ox:0,oy:0,sprintBtn:false,keys:new Set(),queue:[],held:{},contain:false,press:false,lastTackle:0,gpPrev:[]};
 const joyEl=$('#joy'),knob=$('#knob');
 const touch=$('#touch');
@@ -1166,9 +1135,7 @@ function doUserAction(p,a){
   else if(a.b==='skill'){if(!p.mustPass)skillMove(p,dir||[Math.cos(p.face),Math.sin(p.face)])}
 }
 
-/* =========================================================
-   AI
-   ========================================================= */
+/* ===== AI ===== */
 function homePos(p,attacking){
   const s=SIDE[p.team],bOwn=ball.x*s,t=clamp((bOwn+HL)/PL,0,1);
   let x=p.hx+t*42-6+(attacking?7:-1)+((S.press?S.press[p.team]:1)-1)*(attacking?3:6);
@@ -1303,9 +1270,7 @@ function resolveSaves(){
     }}
 }
 
-/* =========================================================
-   Simulation step
-   ========================================================= */
+/* ===== Simulation step ===== */
 function moveToward(p,dt,tx,tz,maxSp,acc){
   const dx=tx-p.x,dz=tz-p.z,d=hyp(dx,dz);
   const sp=d>.25?Math.min(maxSp,d*2.2):0;
@@ -1460,9 +1425,7 @@ function step(dt){
   if(S.phase==='play'||S.phase==='restart'||(S.phase==='goal'&&S.phaseT<1.3))record(dt);
 }
 
-/* =========================================================
-   Rendering sync
-   ========================================================= */
+/* ===== Rendering sync ===== */
 const _m=new THREE.Matrix4(),_q=new THREE.Quaternion(),_s=new THREE.Vector3(),_p=new THREE.Vector3(),_ax=new THREE.Vector3(),_rq=new THREE.Quaternion();
 let lastBX=0,lastBZ=0;
 function syncScene(t){
@@ -1501,9 +1464,7 @@ function syncScene(t){
   const r=ball.passTo;recvRing.visible=!!r&&r!==c&&S.phase==='play';if(r)recvRing.position.set(r.x,0,r.z);
 }
 
-/* =========================================================
-   Camera
-   ========================================================= */
+/* ===== Camera ===== */
 const CAMS=[{name:'Broadcast',h:20,d:29,fov:38},{name:'Tele',h:14,d:22,fov:38},{name:'Wide',h:34,d:50,fov:40},{name:'Pro',pro:true}];
 const cam={x:0,z:0,lx:0,ly:0,lz:0,init:false};
 function updateCamera(dt){
@@ -1530,9 +1491,7 @@ function updateCamera(dt){
   camera.lookAt(cam.lx,cam.ly,cam.lz);camera.updateProjectionMatrix();
 }
 
-/* =========================================================
-   HUD
-   ========================================================= */
+/* ===== HUD ===== */
 const mini=$('#mini'),mg=mini.getContext('2d');
 function drawMini(){
   const W=mini.width,H=mini.height,sx=W/(PL+6),X=x=>(x+HL+3)*sx,Z=z=>(z+HW+3)*sx;
@@ -1573,9 +1532,7 @@ let noticeT=0;
 function notice(html){if(S.user<0)return;const n=$('#notice');n.innerHTML=html;n.classList.add('on');noticeT=3}
 function toast(t){if(!t)return;const e=$('#toast');e.textContent=t;e.classList.add('on');toastT=1.3}
 
-/* =========================================================
-   Menu, pause, full time
-   ========================================================= */
+/* ===== Menu, pause, full time ===== */
 function crest(T){const c=document.createElement('span');c.className='crest';c.style.background='#'+new THREE.Color(T.kit).getHexString();c.style.color=colorDist(T.kit,0xffffff)<.5?'#111':'#fff';c.textContent=T.code[0];return c}
 function buildChips(el,key){el.innerHTML='';TEAMS.forEach((T,i)=>{const b=document.createElement('button');b.className='chip';b.append(crest(T),T.name);
   b.addEventListener('click',()=>{sel[key]=i;if(sel.team===sel.opp){const o=key==='team'?'opp':'team';sel[o]=(i+1)%TEAMS.length}refreshMenu()});el.append(b)})}
@@ -1633,9 +1590,7 @@ touch.addEventListener('pointerdown',()=>{if(S.phase==='replay'&&RP&&RP.t>.6)aft
 document.addEventListener('visibilitychange',()=>{if(document.hidden&&S.user>=0&&(S.phase==='play'||S.phase==='restart'))togglePause(true)});
 addEventListener('resize',()=>{renderer.setSize(innerWidth,innerHeight);camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix()});
 
-/* =========================================================
-   Main loop
-   ========================================================= */
+/* ===== Main loop ===== */
 let last=performance.now();
 function frame(nowMs){
   const real=Math.min(.05,(nowMs-last)/1000);last=nowMs;const t=nowMs/1000;

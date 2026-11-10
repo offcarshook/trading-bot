@@ -1,0 +1,85 @@
+
+<div id="stage"></div>
+<div id="touch"></div>
+<div id="fade"></div>
+
+<div id="hud" hidden>
+  <div id="board"><span class="tm"><i id="c0"></i><span id="t0">HBW</span></span><b id="sc">0 – 0</b><span class="tm"><span id="t1">CPV</span><i id="c1"></i></span><span id="clk">0'</span></div>
+  <div id="who"><span class="num" id="whoNum">9</span><span id="whoName">Player</span><span id="stam"><i></i></span></div>
+  <canvas id="mini" width="300" height="194"></canvas>
+  <button id="pauseBtn" aria-label="Pause">II</button>
+  <button id="subsBtn" aria-label="Substitutions">SUBS</button>
+  <div id="toast"></div>
+  <div id="notice" class="notice"></div>
+  <div id="hint" hidden></div>
+  <div id="replayTag" hidden>REPLAY</div>
+  <div id="banner"></div>
+  <div id="power"><i></i></div>
+  <div id="carrier" hidden></div>
+  <div id="joyHint">Move<br>here</div>
+  <div id="joy"><div id="knob"></div></div>
+  <div id="rotate">Turn your phone sideways for the full pitch</div>
+  <div id="pad">
+    <button class="b-sprint" data-b="sprint">SPRINT</button>
+    <button class="b-pass" data-b="pass"><span><span class="lbl">PASS</span><small class="sub">hold: lob</small></span></button>
+    <button class="b-through" data-b="through"><span><span class="lbl">THRU</span><small class="sub">ball</small></span></button>
+    <button class="b-shoot" data-b="shoot"><span><span class="lbl">SHOOT</span><small class="sub">hold: power</small></span></button>
+    <button class="b-skill" data-b="skill"><span><span class="lbl">SKILL</span><small class="sub">feint</small></span></button>
+    <button class="b-lob" data-b="lob"><span><span class="lbl">LOB</span><small class="sub">long ball</small></span></button>
+  </div>
+</div>
+
+<div id="menu" class="overlay">
+  <div class="card menu">
+    <div>
+      <span class="kicker">Matchday · Night fixture</span>
+      <h1>STRIKE<em>27</em></h1>
+      <p class="lede">Eleven-a-side football built for your thumbs. Pick a club, kick off and beat the keeper.</p>
+      <button id="kickoff" class="cta">Kick off</button>
+      <p class="help"><b>Phone:</b> left thumb anywhere moves, push to the edge to sprint. Hold SHOOT for power, past the white line skies it.<br><b>Keyboard:</b> WASD move · J pass · K shoot · L through · U lob · I skill · Shift sprint · P pause</p>
+    </div>
+    <div class="opts">
+      <div class="opt"><label>Your club</label><div class="chips" id="teamPick"></div></div>
+      <div class="opt"><label>Opponent</label><div class="chips" id="oppPick"></div></div>
+      <div class="row2">
+        <div class="opt"><label>Half length</label><div class="seg" id="lenPick"><button data-v="2">2 min</button><button data-v="4">4 min</button><button data-v="6">6 min</button></div></div>
+        <div class="opt"><label>Difficulty</label><div class="seg" id="diffPick"><button data-v="amateur">Amateur</button><button data-v="pro">Pro</button><button data-v="legend">Legend</button></div></div>
+      </div>
+      <div class="opt"><label>Camera</label><div class="seg" id="camPick"><button data-v="0">Broadcast</button><button data-v="1">Tele</button><button data-v="2">Wide</button><button data-v="3">Pro</button></div></div>
+    </div>
+  </div>
+</div>
+
+<div id="pause" class="overlay" hidden>
+  <div class="card small">
+    <span class="kicker">Paused</span>
+    <button id="resume" class="cta">Resume</button>
+    <button id="subsOpen" class="ghost">Substitutions</button>
+    <button id="pressBtn" class="ghost">Pressing: Balanced</button>
+    <button id="camBtn" class="ghost">Camera: Broadcast</button>
+    <button id="sndBtn" class="ghost">Sound: On</button>
+    <button id="quit" class="ghost">Quit to menu</button>
+  </div>
+</div>
+
+<div id="subs" class="overlay" hidden>
+  <div class="card subcard">
+    <div class="subhead"><span class="kicker">Substitutions</span><span id="subsLeft">5 left</span></div>
+    <p class="subtip" id="subTip"></p>
+    <div class="subcols">
+      <div><h3>On the pitch</h3><div id="subOn" class="sublist"></div></div>
+      <div><h3>Bench</h3><div id="subBench" class="sublist"></div></div>
+    </div>
+    <div class="btnrow" style="margin-top:12px"><button id="subDone" class="cta">Done</button></div>
+  </div>
+</div>
+
+<div id="ft" class="overlay" hidden>
+  <div class="card small" style="width:min(420px,100%)">
+    <span class="kicker">Full time</span>
+    <div class="ftscore"><span id="ftA">HBW</span><b id="ftS">0 – 0</b><span id="ftB">CPV</span></div>
+    <dl class="ftstats" id="ftStats"></dl>
+    <div class="btnrow"><button id="again" class="cta">Rematch</button><button id="toMenu" class="ghost">Main menu</button></div>
+  </div>
+</div>
+
