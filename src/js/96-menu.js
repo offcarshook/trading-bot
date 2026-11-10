@@ -51,6 +51,16 @@ $('#quit').addEventListener('click',toMenu);
 $('#again').addEventListener('click',startMatch);
 $('#toMenu').addEventListener('click',toMenu);
 $('#camBtn').addEventListener('click',()=>{S.camMode=(S.camMode+1)%CAMS.length;sel.cam=S.camMode;refreshMenu();$('#camBtn').textContent='Camera: '+CAMS[S.camMode].name});
+// graphics level: shadows, texture sharpness and resolution (anti-aliasing changes apply after a reload)
+function setGfx(k){
+  Object.assign(GFX,{key:k},CFG.gfx[k]);try{localStorage.setItem('strike27gfx',k)}catch(e){}
+  resScale=1;renderer.setPixelRatio(Math.min(devicePixelRatio||1,GFX.dpr));renderer.shadowMap.enabled=GFX.shadow>0;
+  if(GFX.shadow){sun.shadow.mapSize.set(GFX.shadow,GFX.shadow);if(sun.shadow.map){sun.shadow.map.dispose();sun.shadow.map=null}}
+  shadows.material.opacity=GFX.shadow?.45:1;scene.traverse(o=>{if(o.material)o.material.needsUpdate=true});
+  ALL.forEach(applyLook);refKit();$('#gfxBtn').textContent='Graphics: '+GFX.label;
+}
+$('#gfxBtn').textContent='Graphics: '+GFX.label;
+$('#gfxBtn').addEventListener('click',()=>{const o=['low','medium','high'];setGfx(o[(o.indexOf(GFX.key)+1)%3])});
 $('#sndBtn').addEventListener('click',()=>{S.sound=!S.sound;AU.mute(S.sound);$('#sndBtn').textContent='Sound: '+(S.sound?'On':'Off')});
 touch.addEventListener('pointerdown',()=>{if(S.phase==='replay'&&RP&&RP.t>.6)afterGoal()});
 document.addEventListener('visibilitychange',()=>{if(document.hidden&&S.user>=0&&(S.phase==='play'||S.phase==='restart'))togglePause(true)});

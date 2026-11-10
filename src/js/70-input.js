@@ -82,18 +82,20 @@ function processQueue(){
   const p=S.ctrl;
   if(S.phase==='restart'&&S.rs){if(S.rs.team===S.user&&S.rs.ready&&!S.rs.kick&&IN.queue.length){const a=IN.queue.shift();IN.queue.length=0;userSetPiece(a)}else if(!S.rs.ready||S.rs.team!==S.user)IN.queue.length=0;return}
   if(!p){IN.queue.length=0;return}
-  if(ball.owner===p&&IN.queue.length){const a=IN.queue.shift();IN.queue.length=0;doUserAction(p,a);return}
+  if(ball.owner===p&&!p.act&&IN.queue.length){const a=IN.queue.shift();IN.queue.length=0;doUserAction(p,a);return}
   const t=now();IN.queue=IN.queue.filter(a=>(ball.passTo===p&&t-a.at<1.6)||t-a.at<.15);
 }
 function doUserAction(p,a){
   const[ix,iz,m]=worldInput();const dir=m>.15?[ix,iz]:null;
   const rs=S.rs?S.rs.type:null;
-  if(a.b==='pass'){const cross=p.x*SIDE[p.team]>HL-32&&Math.abs(p.z)>15;passBall(p,dir,cross?'lob':'ground')}
-  else if(a.b==='through'){passBall(p,dir,'through')}
-  else if(a.b==='lob'){passBall(p,dir,'lob')}
+  const K=CFG.kick;
+  if(a.b==='pass'){const cross=p.x*SIDE[p.team]>HL-32&&Math.abs(p.z)>15;startKick(p,cross?2:0,cross?K.userLob:K.userPass,()=>passBall(p,dir,cross?'lob':'ground'))}
+  else if(a.b==='through'){startKick(p,0,K.userPass,()=>passBall(p,dir,'through'))}
+  else if(a.b==='lob'){startKick(p,2,K.userLob,()=>passBall(p,dir,'lob'))}
   else if(a.b==='shoot'){
-    if(p.mustPass&&rs!=='freekick'){passBall(p,dir,'lob');return}
-    const fin=a.held<.18;shoot(p,fin?.55:clamp(a.held/.9,.2,1.18),m>.2?clamp(iz*1.3,-1,1):null,fin);
+    const fin=a.held<.18,pw=fin?.55:clamp(a.held/.9,.2,1.18),aim=m>.2?clamp(iz*1.3,-1,1):null;
+    // a held shot has already drawn the leg back, so only the swing through remains
+    if(fin)startKick(p,1,K.userFinesse,()=>shoot(p,pw,aim,true));else startKick(p,1,K.userShot*2,()=>shoot(p,pw,aim,false),.5);
   }
   else if(a.b==='skill'){if(!p.mustPass)skillMove(p,dir||[Math.cos(p.face),Math.sin(p.face)])}
 }

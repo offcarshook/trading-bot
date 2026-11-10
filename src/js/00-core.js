@@ -1,6 +1,6 @@
 /* ===== Constants & helpers ===== */
 const PL=105, PW=68, HL=52.5, HW=34, GHW=3.66, GH=2.44, BOXX=HL-16.5, BOXZ=20.16;
-const BR=0.2, G=9.81, ROLL=3.0, PSCALE=1.22;
+const BR=0.15, G=9.81, ROLL=3.0, PSCALE=1.22;
 const $=s=>document.querySelector(s);
 const rand=(a=0,b=1)=>a+Math.random()*(b-a);
 const clamp=(v,a,b)=>v<a?a:v>b?b:v;

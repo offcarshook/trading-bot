@@ -104,7 +104,7 @@ function restart(type,team,x,z){
   applySubQueue();for(const t of [0,1])if(t!==S.user)aiSubs(t);clearOffside();S.adv=null;
   const rs=S.rs={type,team,x,z,t:0,ready:false,kick:null,kickT:0,fire:false,taker:null,mate:null,aimX:0,aimZ:0,wall:[],opts:[],inRange:false,cross:false};
   ball.owner=null;ball.vx=ball.vy=ball.vz=0;ball.curl=0;ball.dip=0;ball.shot=false;ball.passTo=null;ball.x=x;ball.z=z;ball.y=BR;
-  players.forEach(p=>{p.recv=false;p.mustPass=false;p.holdT=0;p.hands=false;p.slideT=0;p.diveT=0;p.save=null;p.stun=0;p.celebT=0;p.kickT=0;p.throwT=0;p.wall=false;p.cool=0;p.jumpT=0});
+  players.forEach(p=>{p.recv=false;p.mustPass=false;p.holdT=0;p.hands=false;p.slideT=0;p.diveT=0;p.save=null;p.stun=0;p.celebT=0;p.kickT=0;p.throwT=0;p.wall=false;p.cool=0;p.jumpT=0;p.act=null;p.windA=0});
   for(const p of players){const[hx,hz]=homePos(p,p.team===team);setW(p,hx,hz)}
   for(const t of [0,1])ownW(TP[t][0],-HL+1,0);
   SETUP[type](rs,team,x,z);
@@ -118,7 +118,7 @@ function restart(type,team,x,z){
   if(team===S.user)setCtrl(tk);
   if(S.user>=0&&(!S.ctrl||S.ctrl.off))setCtrl(TP[S.user].filter(q=>!q.gk).sort((a,b)=>hyp(a.x-ball.x,a.z-ball.z)-hyp(b.x-ball.x,b.z-ball.z))[0]);
   if(type==='kickoff')AU.whistle(1,.5);
-  setHint();lastMode=null;
+  setHint();lastMode=null;for(const p of ALL)p.mesh.snap=true;
 }
 function setHint(){
   const rs=S.rs;let t='';
@@ -196,7 +196,7 @@ function execSetPiece(){
   const rs=S.rs,k=rs.kick,tk=rs.taker,T=rs.team,y0=k.mode==='throw'?2.5:BR;
   const v=solveKick(k,ball.x,y0,ball.z),sk=k.mode==='shot'?tk.stats.shoot:tk.stats.pass;
   const err=(1-sk/100)*(k.mode==='shot'?.07:.05)*aiErr(tk)*randn(),c=Math.cos(err),s=Math.sin(err);
-  ball.y=y0;
+  ball.y=y0;tk.kickKind=k.mode==='shot'?1:k.mode==='ground'?0:2;
   kick(tk,v.vx*c-v.vz*s,v.vy*(1+randn()*.03),v.vx*s+v.vz*c,v.curl,k.mode==='throw');
   ball.dip=v.dip;
   if(k.mode==='throw')tk.throwT=.35;

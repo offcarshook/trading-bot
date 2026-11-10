@@ -2,6 +2,8 @@
 const CAMS=[{name:'Broadcast',h:20,d:29,fov:38},{name:'Tele',h:14,d:22,fov:38},{name:'Wide',h:34,d:50,fov:40},{name:'Pro',pro:true}];
 const cam={x:0,z:0,lx:0,ly:0,lz:0,init:false};
 function updateCamera(dt){
+  if(S.debugCam){const d=S.debugCam,p=d.o||ALL[d.i|0],an=p.face+(d.ang??0);camera.position.set(p.x+Math.cos(an)*d.dist,d.h,p.z+Math.sin(an)*d.dist);
+    camera.lookAt(p.x,d.ly??1.1,p.z);camera.fov=d.fov||35;camera.updateProjectionMatrix();return}   // close-up camera for checking models
   const a=camera.aspect,pf=a<1?1.75:a<1.45?1.2:1;
   let px,py,pz,lx,ly,lz,k=1-Math.exp(-dt*3.4);
   if(S.phase==='replay'){

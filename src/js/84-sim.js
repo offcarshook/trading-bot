@@ -22,7 +22,10 @@ function userMove(p,dt){
 }
 function stepPlayers(dt){
   for(const p of players){
-    p.cool-=dt;p.stun-=dt;p.kickT=Math.max(0,p.kickT-dt);p.tackleT-=dt;p.skillCD-=dt;p.skillT=Math.max(0,p.skillT-dt);p.celebT=Math.max(0,p.celebT-dt);p.throwT=Math.max(0,p.throwT-dt);p.diveT=Math.max(0,p.diveT-dt);p.jumpT=Math.max(0,p.jumpT-dt);
+    if(p.act){if(ball.owner!==p||p.stun>0)p.act=null;else{p.act.t-=dt;if(p.act.t<=0){const f=p.act.fn;p.act=null;f()}}}
+    p.windA=p.act?clamp(1-p.act.t/p.act.total,.01,1):p===S.ctrl&&ball.owner===p&&IN.held.shoot!=null?Math.min(.5,(now()-IN.held.shoot)/.9*.5):0;
+    if(p.windA>0&&!p.act)p.kickKind=1;
+    p.cool-=dt;p.stun-=dt;p.kickT=Math.max(0,p.kickT-dt);p.tackleT-=dt;p.skillCD-=dt;p.skillT=Math.max(0,p.skillT-dt);p.celebT=Math.max(0,p.celebT-dt);p.throwT=Math.max(0,p.throwT-dt);p.trapT=Math.max(0,p.trapT-dt);p.diveT=Math.max(0,p.diveT-dt);p.jumpT=Math.max(0,p.jumpT-dt);
     if(ball.owner===p){p.possT+=dt;if(p.gk)p.holdT-=dt}
     p.faceT=null;p.sprinting=false;
     const lockedTaker=S.phase==='restart'&&S.rs&&p===S.rs.taker;
@@ -38,7 +41,8 @@ function stepPlayers(dt){
       if(ball.owner===p)mx*=.93;moveToward(p,dt,p.tx,p.tz,mx,17);p.sprinting=fast&&p.spd>p.jog}
     p.x+=p.vx*dt;p.z+=p.vz*dt;
     p.x=clamp(p.x,-HL-2.5,HL+2.5);p.z=clamp(p.z,-HW-2.5,HW+2.5);
-    p.spd=hyp(p.vx,p.vz);p.phase+=p.spd*dt*1.75;
+    p.spd=hyp(p.vx,p.vz);p.phase+=strideRate(p.spd)*dt;
+    {const cf=Math.cos(p.face),sf=Math.sin(p.face);p.vf=p.spd>.05?(p.vx*cf+p.vz*sf)/p.spd:1;p.vl=p.spd>.05?(p.vx*sf-p.vz*cf)/p.spd:0}
     p.stam=clamp(p.stam+(p.sprinting?-.055:.03)*dt,0,1);
     p.fit=Math.max(.35,p.fit-(p.spd/7)*(p.sprinting?1.6:1)*(S.fatK||0)*dt);if(p.stam>p.fit)p.stam=p.fit;
     let ft=p.faceT;
@@ -55,7 +59,7 @@ function stepBall(dt){
   const o=ball.owner;
   if(o){
     if(o.hands){ball.x=o.x+Math.cos(o.face)*.35;ball.z=o.z+Math.sin(o.face)*.35;ball.y=1.15;ball.vx=o.vx;ball.vz=o.vz;ball.vy=0;return}
-    const lead=.55+o.spd*.07,tx=o.x+Math.cos(o.face)*lead,tz=o.z+Math.sin(o.face)*lead,k=1-Math.exp(-dt*18);
+    const lead=.5+o.spd*.05,tx=o.x+Math.cos(o.face)*lead,tz=o.z+Math.sin(o.face)*lead,k=1-Math.exp(-dt*18);
     const nx=ball.x+(tx-ball.x)*k,nz=ball.z+(tz-ball.z)*k;ball.vx=(nx-ball.x)/dt;ball.vz=(nz-ball.z)/dt;ball.x=nx;ball.z=nz;ball.y=BR;ball.vy=0;return;
   }
   if(S.phase==='restart'){ball.vx=ball.vy=ball.vz=0;const rs=S.rs;

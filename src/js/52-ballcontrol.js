@@ -1,8 +1,11 @@
 /* ===== Ball control: possession, kicks, passes, shots ===== */
 function setCtrl(p){if(S.user<0||!p||p.team!==S.user||p.gk)return;S.ctrl=p;$('#whoNum').textContent=p.num;$('#whoName').textContent=p.name}
+// a kick takes a moment: the leg swings back and the ball only leaves when the boot arrives
+function startKick(p,kind,delay,fn,from=0){p.act={t:delay*(1-from),total:delay,fn};p.kickKind=kind}
 function gainPossession(p){
   if(p.offside&&S.phase==='play'){callOffside(p);return}
   clearOffside();
+  if(!p.gk&&hyp(ball.vx,ball.vy,ball.vz)>8)p.trapT=.22;p.act=null;
   ball.owner=p;ball.shot=false;ball.passTo=null;ball.curl=0;S.lastTouch=p.team;p.possT=0;
   players.forEach(q=>q.recv=false);
   p.hands=p.gk&&inOwnBox(p);if(p.hands)p.holdT=1.1;ball.dip=0;
@@ -77,7 +80,7 @@ function skillMove(p,dir){
 }
 function standTackle(p){
   if(p.tackleT>0||p.stun>0||p.slideT>0)return;
-  p.tackleT=.4;p.kickT=.25;const fx=Math.cos(p.face),fz=Math.sin(p.face);
+  p.tackleT=.4;const fx=Math.cos(p.face),fz=Math.sin(p.face);
   const o=ball.owner,bd=hyp(ball.x-p.x,ball.z-p.z);
   if(o&&o.team!==p.team&&!o.hands){
     if(bd<1.9||hyp(o.x-p.x,o.z-p.z)<1.4){

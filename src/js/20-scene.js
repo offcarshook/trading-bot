@@ -1,6 +1,7 @@
 /* ===== Renderer & scene ===== */
-const renderer=new THREE.WebGLRenderer({antialias:true,powerPreference:'high-performance'});
-renderer.setPixelRatio(Math.min(devicePixelRatio||1,1.75));
+const renderer=new THREE.WebGLRenderer({antialias:GFX.aa,powerPreference:'high-performance'});
+renderer.setPixelRatio(Math.min(devicePixelRatio||1,GFX.dpr));
+renderer.shadowMap.enabled=GFX.shadow>0;renderer.shadowMap.type=THREE.PCFSoftShadowMap;
 renderer.setSize(innerWidth,innerHeight);
 renderer.outputColorSpace=THREE.SRGBColorSpace;
 renderer.toneMapping=THREE.ACESFilmicToneMapping;
@@ -11,9 +12,22 @@ scene.background=new THREE.Color(0x060a13);
 scene.fog=new THREE.Fog(0x060a13,110,230);
 const camera=new THREE.PerspectiveCamera(38,innerWidth/innerHeight,0.5,500);
 camera.position.set(0,24,40);
-scene.add(new THREE.HemisphereLight(0xe8efff,0x22331a,1.5));
-const sun=new THREE.DirectionalLight(0xfff6e6,2.2); sun.position.set(-20,60,30); scene.add(sun);
-const fill=new THREE.DirectionalLight(0xbcd2ff,.7); fill.position.set(30,40,-40); scene.add(fill);
+scene.add(new THREE.HemisphereLight(0xe8efff,0x22331a,1.2));
+// key floodlight: the one light that casts real shadows; its shadow area follows the camera
+const SUN_DIR=new THREE.Vector3(-26,56,-30).normalize(),sun=new THREE.DirectionalLight(0xfff3dc,2.7);
+sun.castShadow=true;sun.shadow.mapSize.set(GFX.shadow||512,GFX.shadow||512);sun.shadow.bias=-.0004;sun.shadow.normalBias=.03;
+sun.shadow.camera.near=1;sun.shadow.camera.far=260;scene.add(sun);scene.add(sun.target);
+const fill=new THREE.DirectionalLight(0xbcd2ff,.75); fill.position.set(30,40,36); scene.add(fill);
+const _sr=new THREE.Vector3().crossVectors(new THREE.Vector3(0,1,0),SUN_DIR).normalize(),_su=new THREE.Vector3().crossVectors(SUN_DIR,_sr),_st=new THREE.Vector3();
+function updateSun(){
+  if(!GFX.shadow)return;
+  const d=Math.hypot(camera.position.x-cam.lx,camera.position.y,camera.position.z-cam.lz),R=d<16?13:d<30?24:d<52?42:60,c=sun.shadow.camera;
+  if(c.right!==R){c.left=-R;c.right=R;c.top=R;c.bottom=-R;c.updateProjectionMatrix()}
+  // snap to whole shadow texels so shadows don't shimmer as the camera glides
+  const tx=2*R/sun.shadow.mapSize.x;_st.set(cam.lx,0,cam.lz-(d>30?6:0));
+  const a=_st.dot(_sr),b=_st.dot(_su);_st.addScaledVector(_sr,Math.round(a/tx)*tx-a).addScaledVector(_su,Math.round(b/tx)*tx-b);
+  sun.target.position.copy(_st);sun.position.copy(_st).addScaledVector(SUN_DIR,120);sun.target.updateMatrixWorld();
+}
 
 function canvasTex(w,h,draw){const c=document.createElement('canvas');c.width=w;c.height=h;draw(c.getContext('2d'),w,h);const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;return t}
 
@@ -39,7 +53,7 @@ function canvasTex(w,h,draw){const c=document.createElement('canvas');c.width=w;
   });
   tex.anisotropy=renderer.capabilities.getMaxAnisotropy();
   const pitch=new THREE.Mesh(new THREE.PlaneGeometry(PL+2*M,PW+2*M),new THREE.MeshLambertMaterial({map:tex}));
-  pitch.rotation.x=-Math.PI/2;scene.add(pitch);
+  pitch.rotation.x=-Math.PI/2;pitch.receiveShadow=true;scene.add(pitch);
   const apron=new THREE.Mesh(new THREE.PlaneGeometry(260,200),new THREE.MeshLambertMaterial({color:0x15301a}));
   apron.rotation.x=-Math.PI/2;apron.position.y=-.02;scene.add(apron);
 })();
@@ -105,11 +119,11 @@ function animateCrowd(dt){if(crowdJump<=0)return;crowdJump-=dt;const m=new THREE
 const ballMesh=new THREE.Mesh(new THREE.SphereGeometry(BR,20,14),new THREE.MeshLambertMaterial({map:canvasTex(256,128,(g,w,h)=>{
   g.fillStyle='#f7f8fb';g.fillRect(0,0,w,h);g.fillStyle='#14203e';for(let i=0;i<10;i++){const x=(i%5)*w/5+(i>4?w/10:0),y=i>4?h*.7:h*.3;g.beginPath();for(let k=0;k<5;k++){const a=k/5*Math.PI*2;g.lineTo(x+Math.cos(a)*13,y+Math.sin(a)*13)}g.fill()}
   g.fillStyle='#ffd23f';g.fillRect(0,h*.48,w,h*.04);})}));
-scene.add(ballMesh);
+ballMesh.castShadow=true;scene.add(ballMesh);
 
 /* ---------- Shadows (instanced blobs) ---------- */
 const shadowTex=canvasTex(64,64,(g)=>{const r=g.createRadialGradient(32,32,2,32,32,32);r.addColorStop(0,'rgba(0,0,0,.55)');r.addColorStop(1,'rgba(0,0,0,0)');g.fillStyle=r;g.fillRect(0,0,64,64)});
-const shadows=new THREE.InstancedMesh(new THREE.PlaneGeometry(1.3,1.3).rotateX(-Math.PI/2),new THREE.MeshBasicMaterial({map:shadowTex,transparent:true,depthWrite:false}),26);
+const shadows=new THREE.InstancedMesh(new THREE.PlaneGeometry(1.3,1.3).rotateX(-Math.PI/2),new THREE.MeshBasicMaterial({map:shadowTex,transparent:true,depthWrite:false,opacity:GFX.shadow?.45:1}),26);
 scene.add(shadows);
 
 /* ---------- Control marker ---------- */

@@ -10,13 +10,13 @@ const matchMin=()=>((S.half-1)*S.halfLen+Math.min(S.clock,S.halfLen))/S.halfLen*
 function makeBench(t,T,rnd){
   const roles=['GK','CB','RB','CM','DM','RW','ST'],nums=[12,15,14,16,18,17,19];
   BENCH[t]=roles.map((role,k)=>{const r=T.rating-3+(rnd()*8-4),b=x=>clamp(Math.round(r+x+(rnd()*8-4)),45,94);
-    return{role,num:nums[k],name:INIT[(rnd()*INIT.length)|0]+'. '+SUR[(rnd()*SUR.length)|0],stats:genStats(role,b),skin:(rnd()*4)|0,hair:(rnd()*5)|0,used:false}});
+    return{role,num:nums[k],name:INIT[(rnd()*INIT.length)|0]+'. '+SUR[(rnd()*SUR.length)|0],stats:genStats(role,b),look:randomLook(rnd,role),used:false}});
 }
 function doSub(t,p,bi){
   const b=BENCH[t][bi];if(!b||b.used||p.off||S.subsLeft[t]<=0)return false;
-  const out={role:p.role,num:p.num,name:p.name,stats:p.stats,skin:p.skin,hair:p.hair,used:true,fit:p.fit};
+  const out={role:p.role,num:p.num,name:p.name,stats:p.stats,look:p.look,used:true,fit:p.fit};
   p.num=b.num;p.name=b.name;p.stats=b.stats;p.jog=4.7+b.stats.pace/100*1.1;p.sprint=6.7+b.stats.pace/100*2.1;p.stam=1;p.fit=1;p.yc=0;
-  p.skin=b.skin;p.hair=b.hair;p.mesh.head.material=SKIN[b.skin];p.mesh.hairM.material=HAIR[b.hair];
+  p.look=b.look;applyLook(p);
   BENCH[t][bi]=out;S.subsLeft[t]--;S.stats.subs[t]++;
   notice(`<span><b>SUBSTITUTION · ${S.teams[t].code}</b><span class="in">▲ #${b.num} ${b.name}</span>&nbsp;&nbsp;<span class="out">▼ #${out.num} ${out.name}</span></span>`);
   if(S.ctrl===p)setCtrl(p);

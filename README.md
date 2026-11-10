@@ -19,6 +19,9 @@ An original 11v11 football game for mobile browsers, built with Three.js.
 | SPRINT / Shift | Sprint | Sprint |
 
 ## Files
-- `index.html` – the playable game (single file)
-- `game/strike27.html` – same game, artifact version
-- `PROMPT.md` – the full build spec for growing it further
+- `index.html` – the playable game (single file, built)
+- `game/strike27.html` – same game as a page fragment
+- `src/` – the source: `head.html`, `style.css`, `shell.html` and `js/` (one file per system: scene, player model, animation rig, AI, simulation, set pieces, officials, HUD…)
+- `build.mjs` – run `node build.mjs` after editing `src/` to rebuild both pages
+- `docs/REPORT.md` – what the latest update changed, how it was tested and what is still missing
+- `PROMPT.md` – the original build spec

@@ -73,12 +73,12 @@ function ownerAI(o){
   if(opp&&press<7&&(opp.x-o.x)*s>0)dz+=Math.sign(o.z-opp.z||1)*1.0;
   o.tx=o.x+s*8;o.tz=clamp(o.z+dz*8,-HW+2,HW-2);o.run=press>3&&o.stam>.25;
   o.aiT-=.1;
-  if(o.aiT>0)return;
+  if(o.aiT>0||o.act)return;
   o.aiT=S.diff.react*(o.team===S.user?.5:.8)+rand(.05,.18);
-  if(dG<29&&Math.abs(o.z)<20){const pr=dG<14?.85:dG<21?.5:.16;if(Math.random()<pr){shoot(o,rand(.55,.95),null,dG<19&&Math.random()<.4);return}}
+  if(dG<29&&Math.abs(o.z)<20){const pr=dG<14?.85:dG<21?.5:.16;if(Math.random()<pr){const pw=rand(.55,.95),fin=dG<19&&Math.random()<.4;startKick(o,1,CFG.kick.aiShot,()=>shoot(o,pw,null,fin));return}}
   const tgt=bestTarget(o,null,false,40);
   let want=press<2.4?.5:press<4.5?.14:.03;if(o.possT>3.5)want+=.35;if(tgt&&openness(o,tgt)<.35)want*=.3;
-  if(tgt&&Math.random()<want){passBall(o,null,FWD.has(tgt.role)&&Math.random()<.4?'through':'ground');return}
+  if(tgt&&Math.random()<want){const kd=FWD.has(tgt.role)&&Math.random()<.4?'through':'ground';startKick(o,0,CFG.kick.aiPass,()=>passBall(o,null,kd));return}
 }
 function keeperThink(k){
   const s=SIDE[k.team],gx=-HL*s;
